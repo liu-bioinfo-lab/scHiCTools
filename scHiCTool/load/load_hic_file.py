@@ -85,7 +85,7 @@ def re_order_line(line, order):
 
 def ContactMap_from_text(file, reference_genome, resolution, sparse, **kwargs):
     chromosomes, lengths = get_chromosome_lengths(reference_genome, resolution)
-    chromosomes = get_chromosomes(**kwargs)
+    chromosomes = get_chromosomes(chromosomes, **kwargs)
     maps = {k: np.zeros((lengths[k], lengths[k])) for k in chromosomes}
 
     if 'line_format' not in kwargs:
@@ -116,9 +116,11 @@ def ContactMap_from_text(file, reference_genome, resolution, sparse, **kwargs):
             continue
         if adjust_resolution:
             pos1, pos2 = int(pos1) // resolution, int(pos2) // resolution
-        maps[chr1][pos1, pos2] += v
+        else:
+            pos1, pos2 = int(pos1), int(pos2)
+        maps[chr1][pos1, pos2] += float(v)
         if pos1 != pos2:
-            maps[chr1][pos2, pos1] += v
+            maps[chr1][pos2, pos1] += float(v)
     if sparse:
         for k in maps.keys():
             maps[k] = coo_matrix(maps[k])
@@ -127,7 +129,7 @@ def ContactMap_from_text(file, reference_genome, resolution, sparse, **kwargs):
 
 def ContactMap_from_HiC(file, reference_genome, resolution, sparse, **kwargs):
     chromosomes, lengths = get_chromosome_lengths(reference_genome, resolution)
-    chromosomes = get_chromosomes(**kwargs)
+    chromosomes = get_chromosomes(chromosomes, **kwargs)
     maps = {k: np.zeros((lengths[k], lengths[k])) for k in chromosomes}
     for chromosome in chromosomes:
         xs, ys, counts = straw('NONE', file, chromosome, chromosome, 'BP', resolution)

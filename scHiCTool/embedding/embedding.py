@@ -12,7 +12,7 @@ class scHiCs:
 
         for file in list_of_files:
             print('Processing in file: {0}'.format(file))
-            cell = scHiC(file=file, format=format, resolution=resolution, **kwargs)
+            cell = scHiC(file=file, format=format, resolution=resolution, reference_genome=reference_genome, sparse=False, **kwargs)
             # pre_processing_options = ['reduce_sparsity', 'smooth', 'random_walk', 'network_enhancing']
             for operation in preprocessing:
                 if operation == 'reduce_sparsity':
@@ -38,7 +38,7 @@ class scHiCs:
                 self.stripes[chromosome_name].append(stripe_of_cell)
         self.chromosomes = set(self.stripes.keys())
 
-    def learn_embedding(self, method, aggregation='median', dimension=2, **kwargs):
+    def learn_embedding(self, method, aggregation='median', dimension=2, return_distance=False, **kwargs):
         """
         Learn a low-dimensional embedding for cells.
         :param method: (str) 'inner_product', 'HiCRep' or 'Selfish'
@@ -54,12 +54,16 @@ class scHiCs:
         distance_matrices = np.array(distance_matrices)
         if aggregation == 'mean':
             final_distance = np.mean(distance_matrices, axis=0)
-        elif aggregation == 'medium':
+        elif aggregation == 'median':
             final_distance = np.median(distance_matrices, axis=0)
         else:
             raise ValueError('Aggregation method {0} not supported. Only "mean" or "median".'.format(aggregation))
 
         embedding = MDS(final_distance, dimension)
-        return embedding
+
+        if return_distance:
+            return embedding, final_distance
+        else:
+            return embedding
 
 

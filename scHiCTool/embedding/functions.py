@@ -23,14 +23,14 @@ def pairwise_distances(all_stripes, method, **kwargs):
                 z = zscore(stripe) if np.sum(stripe) != 0 else stripe
                 zs += z.tolist()
             zscores.append(zs)
-        count, total = 0, (len(all_stripes) - 1) * (len(all_stripes) - 2) // 2
+        count, total = 0, (len(all_stripes) - 1) * len(all_stripes) // 2
         distance_mat = np.zeros((len(zscores), len(zscores)))
         for i in range(len(zscores) - 1):
             for j in range(i+1, len(zscores)):
                 if count % 10000 == 0:
                     print(' Distances: {0} / {1}'.format(count, total))
                 count += 1
-                distance = np.sqrt(2 - 2 * np.inner(zscores[i], zscores[j]))
+                distance = np.sqrt(2 - 2 * np.inner(zscores[i], zscores[j]) / len(zscores[i]))
                 distance_mat[i][j] = distance
                 distance_mat[j][i] = distance
 
@@ -43,7 +43,7 @@ def pairwise_distances(all_stripes, method, **kwargs):
                 all_means[i, j] = np.mean(all_stripes[i][j])
                 if all_means[i, j] != 0:
                     all_stds[i, j] = np.std(all_stripes[i][j])
-        count, total = 0, (len(all_stripes) - 1) * (len(all_stripes) - 2) // 2
+        count, total = 0, (len(all_stripes) - 1) * len(all_stripes) // 2
         distance_mat = np.zeros((len(all_stripes), len(all_stripes)))
         for i in range(len(all_stripes) - 1):
             for j in range(i+1, len(all_stripes)):
@@ -64,6 +64,7 @@ def pairwise_distances(all_stripes, method, **kwargs):
     else:
         raise ValueError('Method {0} not supported. Only "inner_product", "HiCRep" and "Selfish".'.format(method))
 
+    return distance_mat
 
 
 
