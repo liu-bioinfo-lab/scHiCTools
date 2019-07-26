@@ -1,7 +1,7 @@
 import sys
 sys.path.insert(0, '../')
 print(sys.path)
-from scHiCTool import scHiCs
+from scHiCTools import scHiCs
 
 
 x = scHiCs(['cell_01', 'cell_02', 'cell_03'], reference_genome='mm9', resolution=500000, max_distance=4000000,

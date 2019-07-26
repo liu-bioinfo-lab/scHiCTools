@@ -4,7 +4,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="scHiCTool",
+    name="scHiCTools",
     version="0.0.1",
     author="Fan Feng",
     author_email="fanfeng@umich.edu",
