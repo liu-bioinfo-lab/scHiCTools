@@ -84,8 +84,14 @@ def re_order_line(line, order):
 
 
 def ContactMap_from_text(file, reference_genome, resolution, sparse, **kwargs):
-    chromosomes, lengths = get_chromosome_lengths(reference_genome, resolution)
-    chromosomes = get_chromosomes(chromosomes, **kwargs)
+    # Load contact map from customized files
+    # Check .ContactMap to see the docstrings for arguments
+    if type(reference_genome) == dict:
+        lengths = reference_genome
+        chromosomes = set(lengths.keys())
+    else:
+        chromosomes, lengths = get_chromosome_lengths(reference_genome, resolution)
+        chromosomes = get_chromosomes(chromosomes, **kwargs)
     maps = {k: np.zeros((lengths[k], lengths[k])) for k in chromosomes}
 
     if 'line_format' not in kwargs:
@@ -110,7 +116,11 @@ def ContactMap_from_text(file, reference_genome, resolution, sparse, **kwargs):
     else:
         adjust_resolution = kwargs['adjust_resolution']
 
-    for line in open_(file):
+    opened_file = open_(file)
+    if header:
+        next(opened_file)
+
+    for line in opened_file:
         chr1, pos1, chr2, pos2, v = re_order_line(line, order)
         if chr1 != chr2:
             continue
