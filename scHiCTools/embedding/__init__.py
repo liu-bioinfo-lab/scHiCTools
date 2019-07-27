@@ -1,2 +1,2 @@
 from .reproducibility import *
-from .embedding import scHiCs
+from .embedding import *

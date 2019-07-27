@@ -8,5 +8,6 @@ For conveniently dealing with single cell HiC data.
 """
 
 from .ContactMap import scHiC
+from .ContactMaps import scHiCs
 from .load_hic_file import *
 

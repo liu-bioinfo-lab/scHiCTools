@@ -1,3 +1,2 @@
-from .embedding import scHiCs
-from .load import scHiC
+from .load import scHiCs, scHiC
 

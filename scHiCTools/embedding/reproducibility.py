@@ -3,8 +3,8 @@ from scipy.stats import zscore
 # from scipy.spatial.distance import cosine
 
 
-def pairwise_distances(all_stripes, method, **kwargs):
-    if method == 'inner_product':
+def pairwise_distances(all_stripes, method, n_windows=10, sigma=1.6):
+    if method == 'InnerProduct':
         print(' Calculating z-scores...')
         zscores = []
         for stripes in all_stripes:
@@ -49,15 +49,44 @@ def pairwise_distances(all_stripes, method, **kwargs):
                 distance_mat[j][i] = distance
 
     elif method == 'Selfish':
-        pass
+        map_size = len(all_stripes[0][0])  # length of the contact map for this chromosome
+        step_size = map_size // (2 * n_windows)
+        fingerprints = [np.zeros(2 * n_windows - 1,) for i in range(len(all_stripes))]
+        print(' Calculating summation of sliding windows...')
+        for idx, stripes in enumerate(all_stripes):
+            for i in range(2 * n_windows - 1):
+                start_pos, end_pos = step_size * i, step_size * (i + 2)
+                sm = 0
+                for j, stripe in enumerate(stripes):
+                    if j >= 2 * step_size:
+                        continue
+                    sm += np.sum(stripe[start_pos: end_pos - j])
+                fingerprints[idx][i] = sm
+        print(' Pairwisely compare the windows...')
+        for idx, fingerprint in fingerprints:
+            comp = np.zeros((len(fingerprint), len(fingerprint)))
+            for i in range(len(fingerprint)-1):
+                for j in range(i+1, len(fingerprint)):
+                    if fingerprint[i] > fingerprint[j]:
+                        comp[i, j] = 1
+                    elif fingerprint[i] < fingerprint[j]:
+                        comp[j, i] = 1
+            fingerprints[idx] = comp
+
+        count, total = 0, (len(all_stripes) - 1) * len(all_stripes) // 2
+        distance_mat = np.zeros((len(all_stripes), len(all_stripes)))
+        for i in range(len(all_stripes) - 1):
+            for j in range(i + 1, len(all_stripes)):
+                if count % 10000 == 0:
+                    print(' Distances: {0} / {1}'.format(count, total))
+                f1, f2 = fingerprints[i], fingerprints[j]
+                dis = np.sum(np.square(f1 - f2))
+                distance = np.sqrt(2 - 2 * np.exp(-sigma * dis))
+                distance_mat[i][j] = distance
+                distance_mat[j][i] = distance
 
     else:
         raise ValueError('Method {0} not supported. Only "inner_product", "HiCRep" and "Selfish".'.format(method))
 
     return distance_mat
-
-
-
-
-
 

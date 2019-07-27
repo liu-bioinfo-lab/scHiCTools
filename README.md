@@ -14,6 +14,12 @@ A computational toolbox for analyzing single cell Hi-C (high-throughput sequenci
   
   **Install from GitHub**
   
+  You can install the package with following command:
+  ```console
+  % install
+  ```
+  Or directly download "scHiCTools-master.zip" from GitHub.
+  
 ### Usage
   **Import Package**
   ```console
@@ -73,6 +79,8 @@ A computational toolbox for analyzing single cell Hi-C (high-throughput sequenci
   You can also skip pre-processing and smoothing in loading step (preprocessing=None).
   But if you didn't store full map (i.e. max_distance=None), longer-range contacts will not be stored
   thus there might be some bias in you do smoothing in next steps.
+  
+  Completing preprocessing and smoothing during loading data is recommended.
 
   **Pre-processing and Smoothing**
   ```console
@@ -99,19 +107,31 @@ A computational toolbox for analyzing single cell Hi-C (high-throughput sequenci
   Arguments:
     - kNN: value 'k' in kNN, default: 20
     - iterations: number of iterations for network enhancing, default: 1
+    - alpha: similar with random_walk_ratio, default: 0.9
   - normalization: matrix normalization.
    Argument:
     - normalization_method: 'OE' (observed / expected), 'VC', 'VC_SQRT', 'KR'
   
   **Learn Embeddings**
   ```console
-  >>>embs = loaded_data.learn embedding(dim=2, method='inner_product', aggregation='median')
+  >>>embs = loaded_data.learn embedding(
+  ... dim=2, method='inner_product',
+  ... max_distance=None, aggregation='median',
+  ... return_distance=False
+  ... )
   ```
   This function will return the embeddings in the format of a numpy array with shape (#_of_cells, #_of_dimensions).
   - dim: the dimension for the embedding
-  - method: reproducibility measure, 'InnerProduct', 'fastHiCRep' or 'Selfish'
-  - aggregation: method to aggregate different chromosomes, 'mean' or 'median'
-  
+  - method: reproducibility measure, 'InnerProduct', 'fastHiCRep' or 'Selfish', default: 'InnerProduct'
+  - max_distance: only consider contacts within this genomic distance, default: None.
+  If None, it will use the 'max_distance' in previous loading data process, thus if you
+  set 'max_distance=None' in data loading, you must specify a max distance for this step
+  - aggregation: method to aggregate different chromosomes, 'mean' or 'median', default: 'median'
+  - return_distance: (bool) if True, return (embeddings, distance_matrix); if False, only return embeddings
+  - Some additional argument for Selfish:
+    - n_windows: split contact map into n windows, default: 10
+    - sigma: sigma in the Gaussian-like kernel: default: 1.6
+
 ### Citation
 
 

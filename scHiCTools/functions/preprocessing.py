@@ -3,106 +3,96 @@ from scipy.signal import convolve2d
 from scipy.sparse import coo_matrix
 
 
-def smooth(scHiC, **kwargs):
+def processing(scHiC, methods, **kwargs):
     """
-    Smoothing with a convolution kernel for all chromosomes' contact map for a cell.
-    :param smoothing_parameter: kernel size = 2 * parameter + 1
-    Update in scHiC.processed_maps
-    """
-    if 'smoothing_parameter' not in kwargs:
-        h = 1
-        print('While smoothing: parameter: smoothing_parameter missing. Use default value: 1')
-    else:
-        h = kwargs['smoothing_parameter']
-    for chromosome_name in scHiC.maps.keys():
-        if scHiC.processed_maps[chromosome_name] is None:
-            m = scHiC.maps[chromosome_name].copy()
-        else:
-            m = scHiC.processed_maps[chromosome_name].copy()
-        if scHiC.sparse:
-            m = m.toarray()
-        conv = np.ones((2 * h + 1, 2 * h + 1)) / ((2 * h + 1) ** 2)
-        m = convolve2d(m, conv, 'same')
-        if scHiC.sparse:
-            m = coo_matrix(m)
-        scHiC.processed_maps[chromosome_name] = m
+    :param methods: (str) 'reduce_sparsity', 'convolution', 'random_walk' or 'network_enhancing'
 
+    reduce_sparsity: Hi-C reads usually varies between several magnitude,
+  taking logarithm or powers might make it easy for later calculation. Arguments include:
+    - sparsity_method: 'log' (log(W_ij + 1), thus 0 in original matrix is stll 0 in processed matrix)
+    or 'power', default: 'log'
+    - power: (if you choose sparsity_method='power') a number usually between 0 and 1.
+    e.g. power=0.5 means all values W_ij in contact map will be changed to (W_ij)^0.5
+    (i.e. sqrt(W_ij)), default: 0.5
 
-def random_walk(scHiC, **kwargs):
-    """
-    Random walk for all chromosomes' contact map for a cell.
-    Update in scHiC.processed_maps
-    """
-    if 'random_walk_ratio' not in kwargs:
-        p = 0.9
-        print('While doing random walk: parameter: random_walk_ratio missing. Use default value: 0.9')
-    else:
-        p = kwargs['random_walk_ratio']
-    for chromosome_name in scHiC.maps.keys():
-        if scHiC.processed_maps[chromosome_name] is None:
-            m = scHiC.maps[chromosome_name].copy()
-        else:
-            m = scHiC.processed_maps[chromosome_name].copy()
-        if scHiC.sparse:
-            m = m.toarray()
-        sm = np.sum(m, axis=1)
-        sm = np.where(sm == 0, 1, sm)
-        walk = np.zeros(m.shape)
-        for i in range(len(m)):
-            for j in range(len(m)):
-                walk[i][j] = m[i][j] / sm[i]
-        m = p * walk.T.dot(m).dot(walk) + (1 - p) * m
-        if scHiC.sparse:
-            m = coo_matrix(m)
-        scHiC.processed_maps[chromosome_name] = m
+    convolution: smoothing with a N by N convolution kernel, with each value equal to 1/N^2
+  Argument:
+    - kernel_shape: an integer. e.g. kernel_shape=3 means a 3*3 matrix with each value = 1/9, default: 3
 
+    Random walk: multiply by a transition matrix (also calculated from contact map itself). Argument:
+    - random_walk_ratio: a value between 0 and 1, e.g. if ratio=0.9, the result will be
+    0.9 * matrix_after_random_walk + 0.1 * original_matrix. Default: 1.0
 
-def reduce_sparsity(scHiC, method='log', **kwargs):
+    Network enhancing: transition matrix only comes from k-nearest neighbors of each line.
+  Arguments:
+    - kNN: value 'k' in kNN, default: 20
+    - iterations: number of iterations for network enhancing, default: 1
+    - alpha: similar with random_walk_ratio, default: 0.9
+
+    Return nothing. Only modify scHiC.processed_maps
     """
-    Reducing the sparsity of original HiC contact map.
-    :param method: (str) support 'log' or 'power'
-    :param base: (int or float) base of logarithm (if method == 'log')
-    :param power: (int or float) value of power, default 1/2, recommended [1/4, 1/2] (if method == 'power')
-    Update in scHiC.processed_maps
-    """
-    if method == 'log':
-        if 'base' in kwargs:
-            base = kwargs['base']
-        else:
-            base = np.e
-            print('While reducing sparsity with logarithm: Base of logarithm missing. Use default value: e')
-        for chromosome_name in scHiC.maps.keys():
+    for method in methods:
+        for chromosome_name in scHiC.chromosomes:
             if scHiC.processed_maps[chromosome_name] is None:
                 m = scHiC.maps[chromosome_name].copy()
             else:
                 m = scHiC.processed_maps[chromosome_name].copy()
             if scHiC.sparse:
                 m = m.toarray()
-            m = np.log(m + 1) / np.log(base)
-            if scHiC.sparse:
-                m = coo_matrix(m)
-            scHiC.processed_maps[chromosome_name] = m
-    elif method == 'power':
-        if 'power' in kwargs:
-            power = kwargs['power']
-        else:
-            power = 0.5
-            print('While reducing sparsity with power function: Power number missing. Use default value: 1/2')
-        for chromosome_name in scHiC.maps.keys():
-            if scHiC.processed_maps[chromosome_name] is None:
-                m = scHiC.maps[chromosome_name].copy()
+
+            if method == 'convolution':
+                m = convolution(m, **kwargs)
+            elif method == 'random_walk':
+                m = random_walk(m, **kwargs)
+            elif method == 'reduce_sparsity':
+                m = reduce_sparsity(m, **kwargs)
+            elif method == 'network_enhancing':
+                m = network_enhancing(m, **kwargs)
             else:
-                m = scHiC.processed_maps[chromosome_name].copy()
-            if scHiC.sparse:
-                m = m.toarray()
-            m = np.power(m, power)
+                print('Operation not in [reduce_sparsity, convolution, random_walk, network_enhancing].\
+                                 Operation omitted.')
+
             if scHiC.sparse:
                 m = coo_matrix(m)
-            scHiC.processed_maps[chromosome_name] = m
+
+
+def convolution(mat, kernel_shape=3, **kwargs):
+    conv = np.ones((kernel_shape, kernel_shape)) / (kernel_shape ** 2)
+    mat = convolve2d(mat, conv, 'same')
+    return mat
+
+
+def random_walk(mat, random_walk_ratio=1.0, **kwargs):
+    sm = np.sum(mat, axis=1)
+    sm = np.where(sm == 0, 1, sm)
+    sm = np.tile(sm, (len(mat), 1)).T
+    walk = mat / sm
+    mat = random_walk_ratio * walk.T.dot(mat).dot(walk) + (1 - random_walk_ratio) * mat
+    return mat
+
+
+def reduce_sparsity(mat, sparsity_method='log', power=0.5, **kwargs):
+    if sparsity_method == 'log':
+        return np.log(mat + 1)
+    elif sparsity_method == 'power':
+        return np.power(mat, power)
     else:
-        raise ValueError('Method {0} not supported while reducing sparsity.'.format(method))
+        raise ValueError('Method {0} not supported while reducing sparsity.'.format(sparsity_method))
 
 
-def network_enhancing(scHiC, num_of_kNN=20, iteration=1, alpha=0.8):
-    pass
+def network_enhancing(mat, kNN=20, iteration=1, alpha=0.9, **kwargs):
+    argsort = np.argsort(-mat, axis=1)
+    new_mat = np.array(mat.shape)
+    for i in range(len(mat)):
+        for j in range(kNN):
+            pos = argsort[i, j]
+            new_mat[i, pos] = mat[i, pos]
 
+    sm = np.sum(new_mat, axis=1)
+    sm = np.where(sm == 0, 1, sm)
+    sm = np.tile(sm, (len(mat), 1)).T
+    walk = new_mat / sm
+
+    for k in range(iteration):
+        mat = alpha * walk.T.dot(mat).dot(walk) + (1 - alpha) * mat
+    return mat

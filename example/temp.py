@@ -1,17 +1,10 @@
-def change(f1, f2):
-    f = open(f2, 'w')
-    for line in open(f1, 'r'):
-        lst = line.strip().split()
-        if lst[0] == '20':
-            lst[0] = 'X'
-        if lst[0] == '21':
-            lst[0] = 'Y'
-        if lst[2] == '20':
-            lst[2] = 'X'
-        if lst[2] == '21':
-            lst[2] = 'Y'
-        f.write(' '.join(lst) + '\n')
-    f.close()
+import numpy as np
 
-change('cell_3', 'cell_03')
+
+x = np.array([[1, 2, 3], [6, 3, 4]])
+y = x.copy()
+y[1, 2] = 999
+print(x)
+print(y)
+
 

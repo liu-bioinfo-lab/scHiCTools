@@ -43,47 +43,42 @@ class scHiCs:
 
         # Only keep stripes data if max_distance is not None
         self.stripes = dict()
+        self.resolution = resolution
         self.num_of_cells = len(list_of_files)
 
         for file in list_of_files:
             print('Processing in file: {0}'.format(file))
             cell = scHiC(file=file, format=format, resolution=resolution, reference_genome=reference_genome,
                          sparse=False, **kwargs)
+
             if normalization is not None:
-                if normalization not in ['OE', 'KR', 'VC', 'VC_SQRT']:
-                    print("Normalization operation not in ['OE', 'KR', 'VC', 'VC_SQRT']. Normalization omitted.")
                 normalization_matrix(cell, normalization)
-            # pre_processing_options = ['reduce_sparsity', 'smooth', 'random_walk', 'network_enhancing']
-            for operation in preprocessing:
-                if operation == 'reduce_sparsity':
-                    reduce_sparsity(cell, **kwargs)
-                elif operation == 'smooth':
-                    smooth(cell, **kwargs)
-                elif operation == 'random_walk':
-                    random_walk(cell, **kwargs)
-                elif operation == 'network_enhancing':
-                    network_enhancing(cell, **kwargs)
-                else:
-                    print('Operation not in [reduce_sparsity, smooth, random_walk, network_enhancing].\
-                     Operation omitted.')
+
+            if preprocessing is not None:
+                processing(cell, preprocessing, **kwargs)
+
             # Get stripes
             if max_distance is None:
+                self.store_full_map = True
+                self.sparse = sparse
                 for chromosome_name in cell.chromosomes:
                     if chromosome_name not in self.stripes:
                         self.stripes[chromosome_name] = []
-                    if cell.processed_maps is None:
+                    if cell.processed_maps[chromosome_name] is None:
                         m = cell.maps[chromosome_name]
                     else:
                         m = cell.processed_maps[chromosome_name]
-                    if sparse:
+                    if self.sparse:
                         m = coo_matrix(m)
                     self.stripes[chromosome_name].append(m)
             else:
+                self.store_full_map = False
+                self.sparse = False
                 num_of_stripes = max_distance // resolution
                 for chromosome_name in cell.chromosomes:
                     if chromosome_name not in self.stripes:
                         self.stripes[chromosome_name] = []
-                    if cell.processed_maps is None:
+                    if cell.processed_maps[chromosome_name] is None:
                         m = cell.maps[chromosome_name]
                     else:
                         m = cell.processed_maps[chromosome_name]
@@ -95,22 +90,84 @@ class scHiCs:
         self.chromosomes = set(self.stripes.keys())
 
     def preprocessing(self, methods, **kwargs):
-        pass
+        for chromosome_name in self.stripes:
+            for idx, stripes in enumerate(self.stripes[chromosome_name]):
+                if self.store_full_map:
+                    m = stripes
+                    if self.sparse:
+                        m = m.toarray()
+                else:  # Reconstruct full map
+                    m = np.zeros((len(stripes[0]), len(stripes[0])))
+                    for i, stripe in enumerate(stripes):
+                        for j in range(len(stripe)):
+                            m[j, i+j] = stripe[j]
+                            if i != 0:
+                                m[i+j, j] = stripe[j]
 
-    def learn_embedding(self, method, dim=2, aggregation='median', return_distance=False, **kwargs):
+                for method in methods:
+                    if method == 'convolution':
+                        m = convolution(m, **kwargs)
+                    elif method == 'random_walk':
+                        m = random_walk(m, **kwargs)
+                    elif method == 'reduce_sparsity':
+                        m = reduce_sparsity(m, **kwargs)
+                    elif method == 'network_enhancing':
+                        m = network_enhancing(m, **kwargs)
+                    else:
+                        print('Operation not in [reduce_sparsity, convolution, random_walk, network_enhancing].\
+                                         Operation omitted.')
+
+                if self.store_full_map:
+                    if self.sparse:
+                        new_stripes = coo_matrix(m)
+                    else:
+                        new_stripes = m
+                else:
+                    new_stripes = [np.diag(m[i:, :len(m)-i]) for i in range(len(stripes))]
+                self.stripes[chromosome_name][idx] = new_stripes
+
+    def learn_embedding(self, method, dim=2, aggregation='median', max_distance=None, return_distance=False, **kwargs):
         """
         Learn a low-dimensional embedding for cells.
         :param method: (str) 'inner_product', 'HiCRep' or 'Selfish'
         :param aggregation: (str) 'mean' or 'median'
         :param dim: (int) dimension of the embedding
-        :return: numpy.array (shape: num_of_cells * dimension)
+        :param max_distance: (int or None) max_distance: only consider contacts within this genomic distance, default: None.
+        If None, it will use the 'max_distance' in previous loading data process, thus if you
+        set 'max_distance=None' in data loading, you must specify a max distance for this step
+        :param return_distance: (bool) if True, return (embeddings, distance_matrix); if False, only return embeddings
+
+        Some additional argument for Selfish:
+          :param n_windows: number of Selfish windows
+          :param sigma: sigma in the Gaussian-like kernel
+
+        :return: embeddings: numpy.array (shape: num_of_cells * dimension),
+        distance_matrix: numpy.array (shape: num_of_cells * num_of_cells)
         """
         distance_matrices = []
+        num_stripes = max_distance // self.resolution if max_distance is not None else -1
         for chromosome_name in self.chromosomes:
             print('Calculating pairwise distances for {0}'.format(chromosome_name))
-            distance_matrix = pairwise_distances(self.stripes[chromosome_name], method, **kwargs)
+            if self.store_full_map:
+                if max_distance is None:
+                    raise ValueError('You must specify max genomic distance to use!')
+                full_maps = self.stripes[chromosome_name]
+                stripes = []
+                for fmap in full_maps:
+                    if self.sparse:
+                        fmap = fmap.toarray()
+                    new_stripes = [np.diag(fmap[i:, :len(fmap) - i]) for i in range(len(num_stripes))]
+                    stripes.append(new_stripes)
+            else:
+                stripes = self.stripes[chromosome_name]
+                if max_distance is None or num_stripes >= len(stripes[0]):
+                    pass
+                else:
+                    stripes = [new_stripes[:num_stripes] for new_stripes in stripes]
+            distance_matrix = pairwise_distances(stripes, method)
             distance_matrices.append(distance_matrix)
         distance_matrices = np.array(distance_matrices)
+
         if aggregation == 'mean':
             final_distance = np.mean(distance_matrices, axis=0)
         elif aggregation == 'median':
@@ -118,11 +175,11 @@ class scHiCs:
         else:
             raise ValueError('Aggregation method {0} not supported. Only "mean" or "median".'.format(aggregation))
 
-        embedding = MDS(final_distance, dim)
+        embeddings = MDS(final_distance, dim)
 
         if return_distance:
-            return embedding, final_distance
+            return embeddings, final_distance
         else:
-            return embedding
+            return embeddings
 
 
