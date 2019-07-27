@@ -54,6 +54,7 @@ def processing(scHiC, methods, **kwargs):
 
             if scHiC.sparse:
                 m = coo_matrix(m)
+            scHiC.processed_maps[chromosome_name] = m
 
 
 def convolution(mat, kernel_shape=3, **kwargs):

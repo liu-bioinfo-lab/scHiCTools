@@ -52,7 +52,7 @@ class scHiCs:
                          sparse=False, **kwargs)
 
             if normalization is not None:
-                normalization_matrix(cell, normalization)
+                normalization_cell(cell, normalization)
 
             if preprocessing is not None:
                 processing(cell, preprocessing, **kwargs)
@@ -113,8 +113,10 @@ class scHiCs:
                         m = reduce_sparsity(m, **kwargs)
                     elif method == 'network_enhancing':
                         m = network_enhancing(m, **kwargs)
+                    elif method == 'normalization':
+                        m = normalization_matrix(m, method)
                     else:
-                        print('Operation not in [reduce_sparsity, convolution, random_walk, network_enhancing].\
+                        print('Operation not in [reduce_sparsity, convolution, random_walk, network_enhancing， normalization].\
                                          Operation omitted.')
 
                 if self.store_full_map:
