@@ -83,7 +83,7 @@ def reduce_sparsity(mat, sparsity_method='log', power=0.5, **kwargs):
 
 def network_enhancing(mat, kNN=20, iteration=1, alpha=0.9, **kwargs):
     argsort = np.argsort(-mat, axis=1)
-    new_mat = np.array(mat.shape)
+    new_mat = np.zeros(mat.shape)
     for i in range(len(mat)):
         for j in range(kNN):
             pos = argsort[i, j]
@@ -97,3 +97,9 @@ def network_enhancing(mat, kNN=20, iteration=1, alpha=0.9, **kwargs):
     for k in range(iteration):
         mat = alpha * walk.T.dot(mat).dot(walk) + (1 - alpha) * mat
     return mat
+
+
+if __name__ == '__main__':
+    # Test
+    x = network_enhancing(np.eye(50), 20, 1, 0.5)
+
