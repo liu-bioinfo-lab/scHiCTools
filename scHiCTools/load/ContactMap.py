@@ -5,6 +5,8 @@ Initializing scHiC contact map of one cell.
 from scipy.sparse import coo_matrix
 import numpy as np
 from .load_hic_file import *
+from ..functions.normalization import normalization_cell
+from ..functions.preprocessing import processing
 
 
 class scHiC:
@@ -88,3 +90,13 @@ class scHiC:
             del self.processed_maps[name]
             self.chromosomes.remove(name)
 
+    def normalization(self, method):
+        normalization_cell(self, method)
+
+    def preprocessing(self, methods, **kwargs):
+        processing(self, methods, **kwargs)
+
+
+if __name__ == '__main__':
+    # Test
+    pass

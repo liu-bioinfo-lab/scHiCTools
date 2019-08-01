@@ -128,6 +128,34 @@ A computational toolbox for analyzing single cell Hi-C (high-throughput sequenci
   - Some additional argument for Selfish:
     - n_windows: split contact map into n windows, default: 10
     - sigma: sigma in the Gaussian-like kernel: default: 1.6
+  
+  **For One scHiC Map or Bulk HiC**
+  If you only want to process one HiC map:
+  ```console
+  loaded_data = scHiC(
+  ... sparse=True, matrices=None, file='/cell_01.hic', format='hic',
+  ... reference_genome='mm9', resolution=25000
+  ... )
+  All input arguments are the same with previous "scHiCs". But you are allowed
+  to directly give processed contact map in a dictionary format. E.g.
+  matrices = {
+    'chr1': np.array([...]),
+    'chr2': np.array([...]),
+    ...
+    }
+  ```
+  You can also process and normalize in a similar way:
+  ```console
+  >>>processed_data = loaded_data.preprocessing(
+  ... ['reduce_sparsity', 'convolution', 'network_enhancing'],
+  ... kernel_shape=3,
+  ... kNN = 20
+  ... )
+  ```
+  and
+  ```console
+  >>>processed_data = loaded_data.normalization('KR')
+  ```
 
 ### Citation
 
