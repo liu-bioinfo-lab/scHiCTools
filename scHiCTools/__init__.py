@@ -1,2 +1,2 @@
-from .load import scHiCs, scHiC
+from .load import scHiCs
 
