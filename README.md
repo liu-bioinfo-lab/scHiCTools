@@ -104,7 +104,7 @@ A computational toolbox for analyzing single cell Hi-C (high-throughput sequenci
   ... files, reference_genome='mm9',
   ... resolution=500000, keep_n_strata=10,
   ... format='customized', adjust_resolution=True,
-  ... customized_format=12345, header=False, chromosomes='except Y',
+  ... customized_format=12345, header=0, chromosomes='except Y',
   ... operations=['OE_norm', 'convolution']
   ... )
   ```
@@ -116,7 +116,7 @@ A computational toolbox for analyzing single cell Hi-C (high-throughput sequenci
   - keep_n_strata (None or int): only store contacts within n strata near the diagonal. Default: None.
   If 'None', it will not store strata
   - store_full_map (bool): whether store full contact maps in numpy matrices or
-  scipy sparse matrices
+  scipy sparse matrices，If False, it will save memory.
   - sparse (bool): whether to use sparse matrices
   - format (str): file format, supported formats: 'shortest', 'shortest_score', 'short',
   'short_score' , 'medium', 'long', '4DN', '.hic', '.mcool', 'npy', 'npz', 'matrix',
@@ -139,7 +139,7 @@ A computational toolbox for analyzing single cell Hi-C (high-throughput sequenci
   - operations (list or None): the operations use for pre-processing or smoothing the maps given in a list.
   The operations will happen in the given order.
   Supported operations: 'logarithm', 'power', 'convolution', 'random_walk',
-  'network_enhancing', 'OE_norm', 'VC_norm', 'VC_SQRT_norm', 'KR_norm'
+  'network_enhancing', 'OE_norm', 'VC_norm', 'VC_SQRT_norm', 'KR_norm'。
   Default: None.
   - For preprocessing and smoothing operations, sometimes you need additional arguments
   (introduced in next sub-section).
@@ -149,7 +149,6 @@ A computational toolbox for analyzing single cell Hi-C (high-throughput sequenci
   ```console
   >>>loaded_data.processing(['random_walk', 'network_enhancing'])
   ```
-  (e.g. self.processing(operations) )
   But if you didn't store full map (i.e. store_full_map=False), processing is not
   doable in a separate step.
 

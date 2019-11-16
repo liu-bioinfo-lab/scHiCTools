@@ -37,8 +37,8 @@
         <entry file="file://$PROJECT_DIR$/README.md">
           <provider selected="true" editor-type-id="split-provider[text-editor;markdown-preview-editor]">
             <state split_layout="SPLIT">
-              <first_editor relative-caret-position="396">
-                <caret line="81" column="75" selection-start-line="81" selection-start-column="75" selection-end-line="81" selection-end-column="75" />
+              <first_editor relative-caret-position="-22">
+                <caret line="107" column="43" lean-forward="true" selection-start-line="107" selection-start-column="43" selection-end-line="107" selection-end-column="43" />
               </first_editor>
               <second_editor />
             </state>
@@ -316,7 +316,6 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="-7" y="-7" width="1550" height="838" extended-state="6" />
-    <editor active="true" />
     <layout>
       <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.19233312" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
@@ -510,8 +509,8 @@
     <entry file="file://$PROJECT_DIR$/README.md">
       <provider selected="true" editor-type-id="split-provider[text-editor;markdown-preview-editor]">
         <state split_layout="SPLIT">
-          <first_editor relative-caret-position="396">
-            <caret line="81" column="75" selection-start-line="81" selection-start-column="75" selection-end-line="81" selection-end-column="75" />
+          <first_editor relative-caret-position="-22">
+            <caret line="107" column="43" lean-forward="true" selection-start-line="107" selection-start-column="43" selection-end-line="107" selection-end-column="43" />
           </first_editor>
           <second_editor />
         </state>
