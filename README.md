@@ -157,7 +157,7 @@ A computational toolbox for analyzing single cell Hi-C (high-throughput sequenci
   new_W_ij = log_(base) (W_ij + epsilon). Additional arguments:
     - log_base: default: e
     - epsilon: default: 1
-  - power: new_W_ij = (W_ij)^pow. Additional arguments:
+  - power: new_W_ij = (W_ij)^pow. Additional argument:
     - pow: default: 0.5 (i.e., sqrt(W_ij))
   
   - VC_norm: VC normalization - each value divided by the sum of
@@ -168,7 +168,7 @@ A computational toolbox for analyzing single cell Hi-C (high-throughput sequenci
   - OE_norm: OE normalization -  each value divided by the average of its
   corresponding strata (diagonal line)
   
-  - convolution: smoothing with a N by N convolution kernel, with each value equal to 1/N^2
+  - convolution: smoothing with a N by N convolution kernel, with each value equal to 1/N^2.
   Argument:
     - kernel_shape: an integer. e.g. kernel_shape=3 means a 3*3 matrix with each value = 1/9. Default: 3.
   - Random walk: multiply by a transition matrix (also calculated from contact map itself).
@@ -205,7 +205,7 @@ A computational toolbox for analyzing single cell Hi-C (high-throughput sequenci
     - sigma (float): sigma in the Gaussian-like kernel: default: 1.6
 
 ### Citation
-Feng, Fan, and Jie Liu. "scHiCTools: a computational toolbox for analyzing single cell Hi-C data."
+Fan Feng, and Jie Liu. "scHiCTools: a computational toolbox for analyzing single cell Hi-C data."
 bioRxiv (2019): 769513.
 
 ### References
