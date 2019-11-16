@@ -16,11 +16,76 @@ A computational toolbox for analyzing single cell Hi-C (high-throughput sequenci
   
   You can install the package with following command:
   ```console
-  % install
+  % install (will be updated later)
   ```
   Or directly download "scHiCTools-master.zip" from GitHub.
   
 ### Usage
+   **Supported Formats**
+  
+  - Pre-processed Matrices:
+  If the data is already processed into matrices for intra-chromosomal contacts,
+  the chromosome from the same cell must be stored in the same folder with
+  chromosome names as file names (e.g., scHiC/cell_1/chr1.txt).
+  You only need to provide the folder name for a cell (e.g., scHiC/cell_1).
+    - npy: numpy.array / numpy.matrix
+    - npz: scipy.sparse.coo_matrix
+    - matrix: matrix stored as pure text
+    - matrix_txt: matrix stored as .txt file
+    - HiCRep: the format required by HiCRep package
+  
+  - Edge List <br />
+   For all formats below:<br />
+   &nbsp; str - strand (forward / reverse)<br />
+   &nbsp; chr - chromosome<br />
+   &nbsp; pos - position<br />
+   &nbsp; score - contact reads<br />
+   &nbsp; frag - fragments (will be ignored)<br />
+   &nbsp; mapq - map quality<br />
+  
+    - Shortest
+     ```
+    <chr1> <pos1> <chr2> <pos2>
+     ```
+    - Shortest_Score
+     ```
+    <chr1> <pos1> <chr2> <pos2> <score>
+     ```
+    - Short
+     ```
+    <str1> <chr1> <pos1> <frag1> <str2> <chr2> <pos2> <frag2>
+     ```
+    - Short_Score
+     ```
+    <str1> <chr1> <pos1> <frag1> <str2> <chr2> <pos2> <frag2> <score>
+     ```
+    - Medium
+     ```
+    <readname> <str1> <chr1> <pos1> <frag1> <str2> <chr2> <pos2> <frag2> <mapq1> <mapq2>
+     ```
+    - Long
+     ```
+    <str1> <chr1> <pos1> <frag1> <str2> <chr2> <pos2> <frag2> <mapq1> <cigar1> <sequence1> <mapq2> <cigar2> <sequence2> <readname1> <readname2>
+     ```
+    - 4DN
+     ```
+    ## pairs format v1.0
+    #columns: readID chr1 position1 chr2 position2 strand1 strand2
+     ```
+   - .hic format: we adapted "straw" from JuiceTools.
+ 
+   - .mcool format: we adapted "dump" from cool.
+ 
+   - Other formats: simply give the indices (start from 1) in the order of
+ "chromosome1 - position1 - chromosome2 - position2 - score" or
+ "chromosome1 - position1 - chromosome2 - position2" or
+ "chromosome1 - position1 - chromosome2 - position2 - mapq1 - mapq2".
+   For example, you can provide "2356" or [2, 3, 5, 6] if the file takes this format:
+   ```
+   <name> <chromosome1> <position1> <frag1> <chromosome2> <position2> <frag2> <strand1> <strand2>
+   contact_1 chr1 3000000 1 chr1 3001000 1 + -
+   ```
+  
   **Import Package**
   ```console
   >>>import scHiCTools
@@ -37,62 +102,73 @@ A computational toolbox for analyzing single cell Hi-C (high-throughput sequenci
   >>>files = ['./cell_1', './cell_2', './cell_3']
   >>>loaded_data = scHiCs(
   ... files, reference_genome='mm9',
-  ... resolution=500000, max_distance=4000000, normalization=None,
+  ... resolution=500000, keep_n_strata=10,
   ... format='customized', adjust_resolution=True,
-  ... line_format=12345, header=False, chromosomes='no Y',
-  ... preprocessing=['reduce_sparsity', 'convolution'],
-  ... kernel_shape=3
+  ... customized_format=12345, header=False, chromosomes='except Y',
+  ... operations=['OE_norm', 'convolution']
   ... )
   ```
-  - reference genome: now supporting 'mm9', 'mm10', 'hg19', 'hg38'.
+  - reference genome (dict or str): now supporting 'mm9', 'mm10', 'hg19', 'hg38'.
   If your reference genome is not in ['mm9', 'mm10', 'hg19', 'hg38'], you need to provide the lengths of chromosomes
   you are going to use with a Python dict. e.g. {'chr1': 150000000, 'chr2': 130000000, 'chr3': 200000000}
-  - resolution: the resolution to separate genome into bins.
+  - resolution (int): the resolution to separate genome into bins.
   If using .hic file format, the given resolution must match with the resolutions in .hic file.
-  - max_distance: only consider contacts within this genomic distance. Default: None.
-  If 'None', it will store full matrices in scipy sparse matrix format, which will use too much memory sometimes
-  - normalization: whether to normalize or what method to use.
-  Methods include: 'OE' (observed / expected), 'VC', 'VC_SQRT', 'KR'. Default: None
-  - format: file format, '.hic' or 'customized', if 'customized', you need to
-  provide the format for each line in argument 'line_format'.
-  - adjust_resolution: whether to adjust resolution for the input file.
-  Sometimes the input file is already in the proper resolution (e.g. position 3000000 has already been changed to 6 with 500kb resolution).
-  For this situation you can set adjust_resolution=False. Default: True.
-  - header: whether the files have a header line. Default: False.
-  - line_format: the column indices in the order of "chromosome 1 - position 1 - chromosome 2 - position 2 - contact reads".
+  - keep_n_strata (None or int): only store contacts within n strata near the diagonal. Default: None.
+  If 'None', it will not store strata
+  - store_full_map (bool): whether store full contact maps in numpy matrices or
+  scipy sparse matrices
+  - sparse (bool): whether to use sparse matrices
+  - format (str): file format, supported formats: 'shortest', 'shortest_score', 'short',
+  'short_score' , 'medium', 'long', '4DN', '.hic', '.mcool', 'npy', 'npz', 'matrix',
+  'HiCRep', 'matrix_txt' and 'customized'. Default: 'customized'.
+  - customized_format (int or str or list): the column indices in the order of
+  "chromosome 1 - position 1 - chromosome 2 - position 2 - contact reads" or
+  "chromosome 1 - position 1 - chromosome 2 - position 2" or
+  "chromosome 1 - position 1 - chromosome 2 - position 2 - map quality 1 - map quality 2".
   e.g. if the line is "chr1 5000000 chr2 3500000 2", the format should be '12345' or [1, 2, 3, 4, 5]; if there is no column
   indicating number of reads, you can just provide 4 numbers like '1234', and contact read will be set as 1.
   Default: '12345'.
-  - chromosomes: chromosomes to use, eg. ['chr1', 'chr2'], or just 'except Y', 'except XY', 'all'.
+  - adjust_resolution: whether to adjust resolution for the input file.
+  Sometimes the input file is already in the proper resolution (e.g. position 3000000 has already been changed to 6 with 500kb resolution).
+  For this situation you can set adjust_resolution=False. Default: True.
+  - map_filter (float): keep all contacts with mapq higher than this threshold. Default: 0.0
+  - header (int): how many header lines does the file have. Default: 0.
+  - chromosomes (list or str): chromosomes to use, eg. ['chr1', 'chr2'], or
+  just 'except Y', 'except XY', 'all'.
   Default: 'all', which means chr 1-19 + XY for mouse and chr 1-22 + XY for human.
-  - preprocessing: the methods use for pre-processing or smoothing the maps given in a list.
+  - operations (list or None): the operations use for pre-processing or smoothing the maps given in a list.
   The operations will happen in the given order.
-  Operations: 'reduce_sparsity', 'convolution', 'random_walk', 'network_enhancing'.
+  Supported operations: 'logarithm', 'power', 'convolution', 'random_walk',
+  'network_enhancing', 'OE_norm', 'VC_norm', 'VC_SQRT_norm', 'KR_norm'
   Default: None.
-  - For preprocessing and smoothing operations, sometimes you need additional arguments (introduced in next sub-section).
+  - For preprocessing and smoothing operations, sometimes you need additional arguments
+  (introduced in next sub-section).
   
-  You can also skip pre-processing and smoothing in loading step (preprocessing=None).
-  But if you didn't store full map (i.e. max_distance=None), longer-range contacts will not be stored
-  thus there might be some bias if you do smoothing in next steps.
-  
-  Thus, preprocessing and smoothing during loading data is recommended.
-
-  **Pre-processing and Smoothing**
+  You can also skip pre-processing and smoothing in loading step (operations=None),
+  and do them in next lines:
   ```console
-  >>>processed_data = loaded_data.preprocessing(
-  ... ['reduce_sparsity', 'convolution', 'network_enhancing'],
-  ... kernel_shape=3,
-  ... kNN = 20
-  ... )
+  >>>loaded_data.processing(['random_walk', 'network_enhancing'])
   ```
-  - reduce_sparsity: Hi-C reads in a single contact map usually varies between several magnitude
-  (often depends on genomic distance), taking logarithm or powers might make it easy for later calculation.
-  Arguments include:
-    - sparsity_method: 'log' [new_W_ij = log(W_ij + 1)], thus 0 in original matrix is stll 0 in processed matrix)
-    or 'power' [new_W_ij = (W_ij)^pow]. Default: 'log'
-    - power: (if you choose sparsity_method='power') a number usually between 0 and 1.
-    e.g. power=0.5 means all values W_ij in contact map will be changed to (W_ij)^0.5
-    (i.e. sqrt(W_ij)). Default: 0.5.
+  (e.g. self.processing(operations) )
+  But if you didn't store full map (i.e. store_full_map=False), processing is not
+  doable in a separate step.
+
+  **Pre-processing and Smoothing Operations**
+  - logarithm:
+  new_W_ij = log_(base) (W_ij + epsilon). Additional arguments:
+    - log_base: default: e
+    - epsilon: default: 1
+  - power: new_W_ij = (W_ij)^pow. Additional arguments:
+    - pow: default: 0.5 (i.e., sqrt(W_ij))
+  
+  - VC_norm: VC normalization - each value divided by the sum of
+  corresponding row then divided by the sum of corresponding column
+  - VC_SQRT_norm: VC_SQRT normalization - each value divided by the sqrt of the sum
+  of corresponding row then divided by the sqrt of the sum of corresponding column
+  - KR_norm: KR normalization - iterating until the sum of each row / column is one
+  - OE_norm: OE normalization -  each value divided by the average of its
+  corresponding strata (diagonal line)
+  
   - convolution: smoothing with a N by N convolution kernel, with each value equal to 1/N^2
   Argument:
     - kernel_shape: an integer. e.g. kernel_shape=3 means a 3*3 matrix with each value = 1/9. Default: 3.
@@ -105,60 +181,33 @@ A computational toolbox for analyzing single cell Hi-C (high-throughput sequenci
     - kNN: value 'k' in kNN. Default: 20.
     - iterations: number of iterations for network enhancing. Default: 1
     - alpha: similar with random_walk_ratio. Default: 0.9
-  - normalization: matrix normalization.
-   Argument:
-    - normalization_method: 'OE' (observed / expected), 'VC', 'VC_SQRT', 'KR'
   
   **Learn Embeddings**
   ```console
   >>>embs = loaded_data.learn embedding(
-  ... dim=2, method='inner_product',
-  ... max_distance=None, aggregation='median',
-  ... return_distance=False
+  ... dim=2, similarity_method='inner_product', embedding_method='MDS',
+  ... n_strata=None, aggregation='median', return_distance=False
   ... )
   ```
   This function will return the embeddings in the format of a numpy array with shape (#_of_cells, #_of_dimensions).
-  - dim: the dimension for the embedding
-  - method: reproducibility measure, 'InnerProduct', 'fastHiCRep' or 'Selfish'. Default: 'InnerProduct'
-  - max_distance: only consider contacts within this genomic distance. Default: None.
-  If None, it will use the 'max_distance' in the previous loading data process, thus if you
-  set 'max_distance=None' in previous data loading, you must specify a max distance for this step or it will raise an error.
-  - aggregation: method to aggregate different chromosomes, 'mean' or 'median'. Default: 'median'.
-  - return_distance: (bool) if True, return (embeddings, distance_matrix); if False, only return embeddings. Default: False.
+  - dim (int): the dimension for the embedding
+  - similarity_method (str): reproducibility measure, 'InnerProduct', 'fastHiCRep' or
+  'Selfish'. Default: 'InnerProduct'
+  - embedding_method (str): 'MDS', 'tSNE' or 'UMAP'
+  - n_strata (int): only consider contacts within this genomic distance. Default: None.
+  If it is None, it will use the all strata kept (the argument keep_n_strata from
+  previous loading process). Thus n_strata and keep_n_strata (loading step) cannot be
+  None at the same time.
+  - aggregation (str): method to aggregate different chromosomes,
+  'mean' or 'median'. Default: 'median'.
+  - return_distance (bool): if True, return (embeddings, distance_matrix); if False, only return embeddings. Default: False.
   - Some additional argument for Selfish:
-    - n_windows: split contact map into n windows, default: 10
-    - sigma: sigma in the Gaussian-like kernel: default: 1.6
-  
-  **For One scHiC Map or Bulk HiC**
-  If you only want to process one HiC map:
-  ```console
-  loaded_data = scHiC(
-  ... sparse=True, matrices=None, file='/cell_01.hic', format='hic',
-  ... reference_genome='mm9', resolution=25000
-  ... )
-  All input arguments are the same with previous "scHiCs". But you are allowed
-  to directly give processed contact map in a dictionary format. E.g.
-  matrices = {
-    'chr1': np.array([...]),
-    'chr2': np.array([...]),
-    ...
-    }
-  ```
-  You can also process and normalize in a similar way:
-  ```console
-  >>>processed_data = loaded_data.preprocessing(
-  ... ['reduce_sparsity', 'convolution', 'network_enhancing'],
-  ... kernel_shape=3,
-  ... kNN = 20
-  ... )
-  ```
-  and
-  ```console
-  >>>processed_data = loaded_data.normalization('KR')
-  ```
+    - n_windows (int): split contact map into n windows, default: 10
+    - sigma (float): sigma in the Gaussian-like kernel: default: 1.6
 
 ### Citation
-
+Feng, Fan, and Jie Liu. "scHiCTools: a computational toolbox for analyzing single cell Hi-C data."
+bioRxiv (2019): 769513.
 
 ### References
 A. R. Ardakany, F. Ay, and S. Lonardi.  Selfish: Discovery of differential chromatininteractions via a self-similarity measure.bioRxiv, 2019.

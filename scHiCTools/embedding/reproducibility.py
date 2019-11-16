@@ -1,30 +1,32 @@
 import numpy as np
 from scipy.stats import zscore
-# from scipy.spatial.distance import cosine
 
 
-def pairwise_distances(all_stripes, method, n_windows=10, sigma=1.6):
-    if method == 'InnerProduct':
+def pairwise_distances(all_strata, similarity_method, **kwargs):
+    """
+    Args:
+        all_strata (numpy.array): [n_cells * n_bins, n_cells * (n_bins - 1), ...]
+        similarity_method (str): 'inner_product', 'HiCRep', 'Selfish'
+        n_windows (int):
+        sigma (float):
+
+    Return:
+         distance_mat (numpy.array)
+    """
+    method = similarity_method.lower()
+
+    if method in ['inner_product', 'innerproduct']:
         print(' Calculating z-scores...')
         zscores = []
-        for stripes in all_stripes:
-            zs = []
-            for stripe in stripes:
-                z = zscore(stripe) if np.sum(stripe) != 0 else stripe
-                zs += z.tolist()
-            zscores.append(zs)
-        count, total = 0, (len(all_stripes) - 1) * len(all_stripes) // 2
-        distance_mat = np.zeros((len(zscores), len(zscores)))
-        for i in range(len(zscores) - 1):
-            for j in range(i+1, len(zscores)):
-                if count % 10000 == 0:
-                    print(' Distances: {0} / {1}'.format(count, total))
-                count += 1
-                distance = np.sqrt(2 - 2 * np.inner(zscores[i], zscores[j]) / len(zscores[i]))
-                distance_mat[i][j] = distance
-                distance_mat[j][i] = distance
+        for stratum in all_strata:
+            zscores.append(zscore(stratum, axis=1))
+        zscores = np.concatenate(zscores, axis=1)
 
-    elif method == 'HiCRep':
+        print(' Calculating inner product...')
+        inner = zscores.dot(zscores.T) / zscores.shape[1]
+        distance_mat = np.sqrt(2 - 2 * inner)
+
+    elif method == 'hicrep':
         print(' Calculating means and stds...')
         all_means = np.zeros((len(all_stripes), len(all_stripes[0])))
         all_stds = np.zeros((len(all_stripes), len(all_stripes[0])))
@@ -48,7 +50,7 @@ def pairwise_distances(all_stripes, method, n_windows=10, sigma=1.6):
                 distance_mat[i][j] = distance
                 distance_mat[j][i] = distance
 
-    elif method == 'Selfish':
+    elif method == 'selfish':
         map_size = len(all_stripes[0][0])  # length of the contact map for this chromosome
         step_size = map_size // (2 * n_windows)
         fingerprints = [np.zeros(2 * n_windows - 1,) for i in range(len(all_stripes))]
@@ -63,7 +65,7 @@ def pairwise_distances(all_stripes, method, n_windows=10, sigma=1.6):
                     sm += np.sum(stripe[start_pos: end_pos - j])
                 fingerprints[idx][i] = sm
         print(' Pairwisely compare the windows...')
-        for idx, fingerprint in fingerprints:
+        for idx, fingerprint in enumerate(fingerprints):
             comp = np.zeros((len(fingerprint), len(fingerprint)))
             for i in range(len(fingerprint)-1):
                 for j in range(i+1, len(fingerprint)):

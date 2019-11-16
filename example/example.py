@@ -5,9 +5,9 @@ from scHiCTools import scHiCs
 
 
 x = scHiCs(['cell_01', 'cell_02', 'cell_03'], reference_genome='mm9', resolution=500000, max_distance=4000000,
-           format='customized', adjust_resolution=False, line_format=12345, header=False, chromosomes='no Y',
-           preprocessing=['reduce_sparsity', 'convolution'], kernel_shape=3
+           format='shortest_score', adjust_resolution=False, chromosomes='no Y',
+           operations=['reduce_sparsity', 'convolution'], kernel_shape=3, keep_n_strata=10, store_full_map=False
            )
-emb = x.learn_embedding(method='InnerProduct', aggregation='median')
+emb = x.learn_embedding(similarity_method='InnerProduct', embedding_method='MDS', aggregation='median')
 
 print(emb)

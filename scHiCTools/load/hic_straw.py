@@ -653,11 +653,4 @@ def straw(norm, infile, chr1loc, chr2loc, unit, binsize, is_synapse=False):
                  and y>=origRegionIndices[2] and y<=origRegionIndices[3])
                     or ((c1==c2) and y>=origRegionIndices[0] and y<=origRegionIndices[1]
                         and x>= origRegionIndices[2] and x<=origRegionIndices[3])):
-                xActual.append(x)
-                yActual.append(y)
-                counts.append(c)
-    return [xActual, yActual, counts]
-
-
-
-
+                yield x, y, c

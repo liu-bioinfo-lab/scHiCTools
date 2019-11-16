@@ -11,3 +11,10 @@ def MDS(mat, n=2):
     return co
 
 
+def tSNE(mat, n=2, **kwargs):
+    pass
+
+
+def UMAP(mat, n=2, **kwargs):
+    pass
+
