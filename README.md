@@ -76,10 +76,10 @@ A computational toolbox for analyzing single cell Hi-C (high-throughput sequenci
  
    - .mcool format: we adapted "dump" from cool.
  
-   - Other formats: simply give the indices (start from 1) in the order of
- "chromosome1 - position1 - chromosome2 - position2 - score" or
- "chromosome1 - position1 - chromosome2 - position2" or
- "chromosome1 - position1 - chromosome2 - position2 - mapq1 - mapq2".
+   - Other formats: simply give the indices (start from 1) in the order of<br />
+ "chromosome1 - position1 - chromosome2 - position2 - score" or<br />
+ "chromosome1 - position1 - chromosome2 - position2" or<br />
+ "chromosome1 - position1 - chromosome2 - position2 - mapq1 - mapq2".<br />
    For example, you can provide "2356" or [2, 3, 5, 6] if the file takes this format:
    ```
    <name> <chromosome1> <position1> <frag1> <chromosome2> <position2> <frag2> <strand1> <strand2>
