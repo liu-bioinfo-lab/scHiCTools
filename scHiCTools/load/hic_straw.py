@@ -640,8 +640,10 @@ def straw(norm, infile, chr1loc, chr2loc, unit, binsize, is_synapse=False):
 
         for j in range(len(records)):
             rec = records[j]
-            x = rec['binX'] * binsize
-            y = rec['binY'] * binsize
+            # x = rec['binX'] * binsize
+            x = rec['binX']
+            # y = rec['binY'] * binsize
+            y = rec['binY']
             c = rec['counts']
             if (norm != "NONE"):
                 a = c1Norm[rec['binX']]*c2Norm[rec['binY']]

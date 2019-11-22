@@ -1,6 +1,5 @@
 import numpy as np
 from scipy.signal import convolve2d
-from scipy.sparse import coo_matrix
 
 
 def matrix_operation(mat, operations, **kwargs):
@@ -13,7 +12,7 @@ def matrix_operation(mat, operations, **kwargs):
         if op == 'vc_sqrt_norm':
             mat = VC_SQRT_norm(mat)
         if op == 'kr_norm':
-            mat = KR_norm(mat)
+            mat = KR_norm(mat, kwargs.pop('maximum_error_rate', 1e-4))
         if op == 'smoothing':
             mat = convolution(mat, kwargs.pop('kernel_shape', 3))
         if op == 'random_walk':
@@ -66,8 +65,8 @@ def VC_SQRT_norm(mat):
     return new_mat
 
 
-def KR_norm(mat):
-    bias = np.mean(mat) / 1e4
+def KR_norm(mat, maximum_error_rate=1e-4):
+    bias = np.mean(mat) * maximum_error_rate
     # Remove all-zero rows and columns
     sm = np.sum(mat, axis=0)
     zeros = []
@@ -81,6 +80,9 @@ def KR_norm(mat):
     x = np.random.random(size=len(new_mat))
     k = 0
     while True:
+        # I forgot where I found this iteration formula
+        # But it does work...
+        # I'll check later...
         k += 1
         aa = np.diag(x).dot(new_mat) + np.diag(new_mat.dot(x))
         aa = np.linalg.inv(aa)

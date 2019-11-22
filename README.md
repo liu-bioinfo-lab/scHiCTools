@@ -165,6 +165,9 @@ A computational toolbox for analyzing single cell Hi-C (high-throughput sequenci
   - VC_SQRT_norm: VC_SQRT normalization - each value divided by the sqrt of the sum
   of corresponding row then divided by the sqrt of the sum of corresponding column
   - KR_norm: KR normalization - iterating until the sum of each row / column is one
+  Argument:
+    - maximum_error_rate (float): iteration ends when max error is smaller 
+    than (maximum_error_rate). Default: 1e-4
   - OE_norm: OE normalization -  each value divided by the average of its
   corresponding strata (diagonal line)
   
