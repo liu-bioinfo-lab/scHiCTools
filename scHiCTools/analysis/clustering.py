@@ -63,27 +63,36 @@ def kmeans(data, k=4,
 
 
 
-# spectral_clustering can directly takes similarity matrix.
-def spectral_clustering(data,
-                        data_type='graph',
-                        n_clusters=4,
-                        method='Unnormalized'):
+
+
+# Two types of hierarchical clustering: top-down & bottom-up
+
+# Bottom-up algorithms: hierarchical agglomerative clustering(HAC)
+# HAC can directly take distance matrix.
+def HAC(data,
+        data_type='points',
+        n_clusters=4,
+        method="single-link"):
 
     """
-    This function is a impliment of unnormalized spectral clustering.
+    This function is a impliment of hierarchical afflomerative clustering.
+    Reference: Christopher D. Manning, Prabhakar Raghavan and Hinrich Schütze,
+            "Introduction to Information Retrieval" chapter 17
 
     Input:
-        data: a numpy array, can either be a matrix which every row represent a point
+        data: a numpy array,
+            can either be a matrix which every row represent a point
             or a graph similarity matrix.
-        data_type: specify the type of data input.
-        k: number of clusters.
+        n_clusters: number of clusters.
+        method: now support "single-link", "complete-link".
 
     Output:
         a list of the label of the data points.
-    """    
 
-    # compute graph similarity matrix
-    if method=='Unnormalized':
+    """
+
+    if method=='single-link':
+        # compute graph similarity matrix
         if data_type=='graph' and len(data)==len(data[0]):
             if len(data)!=len(data[0]):
                 raise ValueError('data is not a distance matrix!')
@@ -91,26 +100,38 @@ def spectral_clustering(data,
                 raise ValueError('data is not a distance matrix!')
             elif sum(np.diag(data)!=0)!=0:
                 raise ValueError('data is not a distance matrix!')
-            graph=data
+            # using fully connected graph with Gaussian similarity function
+            graph=np.exp(-np.square(data)/np.mean(data)) # sigma?
         elif data_type=='points':
-            # Use pairwised Euclidean distances to compute graph
+            # pair-wise Euclidean distance
             graph = np.sum(np.square(data), 1)
             graph = np.add(np.add(-2 * np.dot(data, data.T), graph).T, graph)
+            # using fully connected graph with Gaussian similarity function
+            graph = np.exp(-graph/np.mean(graph)) # sigma?
         else:
             raise ValueError('data_type is not supported.')
 
-        # the unnormalized Laplacian L.
-        L=csgraph.laplacian(graph, normed=False)
+        similarity=graph-np.diag(np.diag(graph))
+        label=np.array(range(len(graph)))
 
-        # eigenvalues and eigenvectors.
-        eig_vals, eig_vecs = np.linalg.eig(L)
-        eig_vecs= eig_vecs[:, np.flipud(eig_vals.argsort())]
-        eig_vals= np.flipud(np.sort(eig_vals))
+        while max(label)>=n_clusters:
 
-        # first k=n_clusters eigenvectors.
-        U=eig_vecs[:,range(n_clusters)]
+            # find maximum similarity between groups
+            index=np.argmax(similarity)
+            index=[index//len(similarity), index%len(similarity)]
 
-        # Clustering using k-means
-        label=kmeans(U,k=n_clusters)
+            # combine similarity groups
+            label[label==index[1]]=index[0]
+            label[label>index[1]]-=1
 
-        return(label)
+            # new similarity matrix
+            new_simi=np.amax(similarity[:,index],axis=1)
+            similarity[:,index[0]]=new_simi
+            similarity[index[0],:]=new_simi
+            similarity=np.delete(
+                    np.delete(similarity,index[1],axis=0),
+                    index[1],axis=1)
+            similarity[index[0],index[0]]=0
+
+
+    return(label)
