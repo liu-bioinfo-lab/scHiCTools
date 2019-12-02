@@ -63,6 +63,68 @@ def kmeans(data, k=4,
 
 
 
+# spectral_clustering can directly takes distance matrix.
+def spectral_clustering(data,
+                        data_type='points',
+                        n_clusters=4,
+                        method='unnormalized'):
+
+    """
+    This function is a impliment of unnormalized spectral clustering.
+    Reference: "A Tutorial on Spectral Clustering" by Ulrike von Luxburg.
+
+    Input:
+        data: a numpy array,
+            can either be a matrix which every row represent a point
+            or a graph similarity matrix.
+        data_type: specify the type of data input.
+        n_clusters: number of clusters.
+
+    Output:
+        a list of the label of the data points.
+    """
+
+
+    if method=='unnormalized':
+
+        # compute graph similarity matrix
+        if data_type=='graph' and len(data)==len(data[0]):
+            if len(data)!=len(data[0]):
+                raise ValueError('data is not a distance matrix!')
+            elif np.sum(data.T!=data)>0:
+                raise ValueError('data is not a distance matrix!')
+            elif sum(np.diag(data)!=0)!=0:
+                raise ValueError('data is not a distance matrix!')
+            # using fully connected graph with Gaussian similarity function
+            graph=np.exp(-np.square(data)/np.mean(data))
+        elif data_type=='points':
+            # pair-wise Euclidean distance
+            graph = np.sum(np.square(data), 1)
+            graph = np.add(np.add(-2 * np.dot(data, data.T), graph).T, graph)
+            # using fully connected graph with Gaussian similarity function
+            graph = np.exp(-graph/np.mean(graph))
+        else:
+            raise ValueError('data_type is not supported.')
+
+        # the unnormalized Laplacian L.
+        L=csgraph.laplacian(graph, normed=False)
+
+        # eigenvalues and eigenvectors.
+        eig_vals, eig_vecs = np.linalg.eig(L)
+        eig_vecs= eig_vecs[:, np.flipud(eig_vals.argsort())]
+        eig_vals= np.flipud(np.sort(eig_vals))
+
+        # first k=n_clusters eigenvectors.
+        U=eig_vecs[:,range(n_clusters)]
+
+        # Clustering using k-means
+        label=kmeans(U,k=n_clusters)
+
+    else:
+        raise ValueError('Method is not supported.')
+
+
+    return(label)
 
 
 # Two types of hierarchical clustering: top-down & bottom-up
@@ -101,13 +163,13 @@ def HAC(data,
             elif sum(np.diag(data)!=0)!=0:
                 raise ValueError('data is not a distance matrix!')
             # using fully connected graph with Gaussian similarity function
-            graph=np.exp(-np.square(data)/np.mean(data)) # sigma?
+            graph=np.exp(-np.square(data)/np.mean(data))
         elif data_type=='points':
             # pair-wise Euclidean distance
             graph = np.sum(np.square(data), 1)
             graph = np.add(np.add(-2 * np.dot(data, data.T), graph).T, graph)
             # using fully connected graph with Gaussian similarity function
-            graph = np.exp(-graph/np.mean(graph)) # sigma?
+            graph = np.exp(-graph/np.mean(graph))
         else:
             raise ValueError('data_type is not supported.')
 
@@ -132,6 +194,7 @@ def HAC(data,
                     np.delete(similarity,index[1],axis=0),
                     index[1],axis=1)
             similarity[index[0],index[0]]=0
-
+    else:
+        raise ValueError('Method is not supported.')
 
     return(label)
