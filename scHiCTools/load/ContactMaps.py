@@ -1,4 +1,5 @@
 import numpy as np
+from copy import deepcopy
 from scipy.sparse import coo_matrix
 from .load_hic_file import get_chromosome_lengths, load_HiC
 from ..embedding import pairwise_distances, MDS, tSNE, UMAP
@@ -30,17 +31,23 @@ class scHiCs:
             which will use too much memory sometimes
             store_full_map (bool): whether store all contact maps
             normalization (None or str): 'OE' (observed / expected), 'VC', 'VC_SQRT', 'KR'
-            preprocessing (None or list): the methods use for pre-processing or smoothing the maps given in a list.
+            operations (None or list): the methods use for pre-processing or smoothing the maps given in a list.
             The operations will happen in the given order. Operations: 'reduce_sparsity', 'convolution',
             'random_walk', 'network_enhancing'. Default: None.
-            For preprocessing and smoothing operations, sometimes you need additional arguments.
-            You can check docstrings for preprocessing and smoothing for more information.
+            For pre-processing and smoothing operations, sometimes you need additional arguments.
+            You can check docstrings for pre-processing and smoothing for more information.
         """
         self.resolution = resolution
         self.chromosomes, self.chromosome_lengths = get_chromosome_lengths(reference_genome, resolution, **kwargs)
         self.num_of_cells = len(list_of_files)
         self.sparse = sparse
         self.keep_n_strata = keep_n_strata
+
+        res_adjust = kwargs.pop('resolution_adjust', True)
+        header = kwargs.pop('header', 0)
+        custom_format = kwargs.pop('customized_format', None)
+        map_filter = kwargs.pop('map_filter', 0.)
+        gzip = kwargs.pop('gzip', False)
 
         assert keep_n_strata is not None or store_full_map is True
 
@@ -62,36 +69,38 @@ class scHiCs:
 
             for ch in self.chromosomes:
                 mat, strata = load_HiC(
-                    file, genome_length=self.chromosome_lengths[ch], format=format,
-                    custom_format=kwargs.pop('customized_format', None), header=kwargs.pop('header', 0),
-                    chromosome=ch, resolution=resolution, resolution_adjust=kwargs.pop('resolution_adjust', True),
-                    map_filter=kwargs.pop('map_filter', 0.), sparse=sparse, gzip=kwargs.pop('gzip', False),
+                    file, genome_length=self.chromosome_lengths, format=format,
+                    custom_format=custom_format, header=header,
+                    chromosome=ch, resolution=resolution, resolution_adjust=res_adjust,
+                    map_filter=map_filter, sparse=sparse, gzip=gzip,
                     keep_n_strata=keep_n_strata, operations=operations, **kwargs)
                 if store_full_map:
                     self.full_maps[ch][idx] = mat
                 if keep_n_strata:
-                    self.strata[ch][idx] = strata
+                    # self.strata[ch][idx] = strata
+                    for strata_idx, stratum in enumerate(strata):
+                        self.strata[ch][strata_idx][idx, :] = stratum
 
     def cal_strata(self, n_strata):
         if self.full_maps is None:
             if self.keep_n_strata <= n_strata:
-                print(' Only {0} strata is kept!'.format(self.keep_n_strata))
+                print(' Only {0} strata are kept!'.format(self.keep_n_strata))
+                return deepcopy(self.strata)
             else:
-                pass
-                # for ch in self.chromosomes:
-                #   self.strata[ch] = self.strata[ch][:n_strata]
+                return deepcopy({ch: self.strata[ch][:n_strata] for ch in self.chromosomes})
         else:
             if self.keep_n_strata is None:
-                self.strata = {
+                new_strata = {
                     ch: [np.zeros((self.num_of_cells, self.chromosome_lengths[ch] - i))
                          for i in range(n_strata)] for ch in self.chromosomes}
                 for ch in self.chromosomes:
                     for idx in range(self.num_of_cells):
                         fmap = self.full_maps[ch][idx].toarray() if self.sparse else self.full_maps[ch][idx]
                         for i in range(n_strata):
-                            self.strata[ch][idx][i] = np.diag(fmap[i:, :-i])
+                            new_strata[ch][i][idx, :] = np.diag(fmap[i:, :-i])
+                return new_strata
             elif self.keep_n_strata >= n_strata:
-                pass
+                return deepcopy({ch: self.strata[ch][:n_strata] for ch in self.chromosomes})
             else:
                 for ch in self.chromosomes:
                     self.strata[ch] += [(np.zeros(self.num_of_cells, self.chromosome_lengths[ch] - i))
@@ -99,7 +108,8 @@ class scHiCs:
                     for idx in range(self.num_of_cells):
                         fmap = self.full_maps[ch][idx].toarray() if self.sparse else self.full_maps[ch][idx]
                         for i in range(self.keep_n_strata, n_strata):
-                            self.strata[ch][idx][i] = np.diag(fmap[i:, :-i])
+                            self.strata[ch][i][idx, :] = np.diag(fmap[i:, :-i])
+                return deepcopy(self.strata)
 
     def processing(self, operations, **kwargs):
         if self.full_maps is None:
@@ -114,7 +124,7 @@ class scHiCs:
                     self.full_maps[ch][i, :, :] = matrix_operation(mat, operations, **kwargs)
 
     def learn_embedding(self, similarity_method, embedding_method,
-                        dim=2, aggregation='median', n_strata=None, return_distance=False,
+                        dim=2, aggregation='median', n_strata=None, return_distance=False, print_time=False,
                         **kwargs):
         """
         Learn a low-dimensional embedding for cells.
@@ -140,9 +150,11 @@ class scHiCs:
         assert embedding_method.lower() in ['mds', 'tsne', 'umap']
         assert n_strata is not None or self.keep_n_strata is not None
         n_strata = n_strata if n_strata is not None else self.keep_n_strata
-        self.cal_strata(n_strata)
+        new_strata = self.cal_strata(n_strata)
         for ch in self.chromosomes:
-            distance_mat = pairwise_distances(self.strata[ch], similarity_method=similarity_method, **kwargs)
+            print(ch)
+            distance_mat = pairwise_distances(new_strata[ch], similarity_method=similarity_method,
+                                              print_time=print_time, **kwargs)
             distance_matrices.append(distance_mat)
         distance_matrices = np.array(distance_matrices)
 
@@ -165,5 +177,3 @@ class scHiCs:
             return embeddings, final_distance
         else:
             return embeddings
-
-

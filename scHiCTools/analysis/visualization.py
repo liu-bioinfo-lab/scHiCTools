@@ -15,6 +15,7 @@ from matplotlib import colors
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 
+
 def scatter(data, dimension="2D", point_size=3, cmap='Sequential',
             label=None, title=None, alpha=None, aes_label=None,
             **kwargs):

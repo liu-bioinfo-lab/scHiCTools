@@ -219,6 +219,7 @@ def load_HiC(file, genome_length, format=None, custom_format=None, header=0, chr
 
         mat = np.zeros((size, size))
         for p1, p2, val in gen:
+            # print(chromosome, p1, p2, val)
             mat[p1, p2] += val
             if p1 != p2:
                 mat[p2, p1] += val
