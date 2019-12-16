@@ -2,13 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="41157753-c240-4931-a059-a26692982097" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/example/example.py" beforeDir="false" afterPath="$PROJECT_DIR$/example/example.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/example/temp.py" beforeDir="false" afterPath="$PROJECT_DIR$/example/temp.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/scHiCTools/embedding/embedding.py" beforeDir="false" afterPath="$PROJECT_DIR$/scHiCTools/embedding/embedding.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/scHiCTools/embedding/reproducibility.py" beforeDir="false" afterPath="$PROJECT_DIR$/scHiCTools/embedding/reproducibility.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/scHiCTools/load/ContactMaps.py" beforeDir="false" afterPath="$PROJECT_DIR$/scHiCTools/load/ContactMaps.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/scHiCTools/load/load_hic_file.py" beforeDir="false" afterPath="$PROJECT_DIR$/scHiCTools/load/load_hic_file.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/scHiCTools/load/mcool_dump.py" beforeDir="false" afterPath="$PROJECT_DIR$/scHiCTools/load/mcool_dump.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -27,11 +21,11 @@
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="true">
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/scHiCTools/embedding/reproducibility.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="220">
-              <caret line="58" column="45" selection-start-line="58" selection-start-column="45" selection-end-line="58" selection-end-column="45" />
+            <state relative-caret-position="440">
+              <caret line="68" column="56" selection-start-line="68" selection-start-column="56" selection-end-line="68" selection-end-column="56" />
               <folding>
                 <element signature="e#0#18#0" expanded="true" />
               </folding>
@@ -54,7 +48,7 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/example/example.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="111">
+            <state relative-caret-position="418">
               <caret line="19" column="47" selection-start-line="19" selection-start-column="47" selection-end-line="19" selection-end-column="47" />
               <folding>
                 <element signature="e#0#4#0" expanded="true" />
@@ -76,30 +70,6 @@
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/README.md">
-          <provider selected="true" editor-type-id="split-provider[text-editor;markdown-preview-editor]">
-            <state split_layout="SPLIT">
-              <first_editor relative-caret-position="3718">
-                <caret line="169" column="31" selection-start-line="169" selection-start-column="31" selection-end-line="169" selection-end-column="31" />
-              </first_editor>
-              <second_editor />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/scHiCTools/load/processing_utils.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="396">
-              <caret line="22" column="27" selection-start-line="22" selection-start-column="18" selection-end-line="22" selection-end-column="27" />
-              <folding>
-                <element signature="e#0#18#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/scHiCTools/embedding/embedding.py">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="110">
@@ -114,7 +84,7 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/scHiCTools/analysis/clustering.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-727">
+            <state relative-caret-position="-3857">
               <folding>
                 <element signature="e#130#148#0" expanded="true" />
               </folding>
@@ -123,10 +93,34 @@
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/scHiCTools/embedding/embedding_utils.py">
+        <entry file="file://$PROJECT_DIR$/scHiCTools/analysis/visualization.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1914">
-              <caret line="87" selection-start-line="87" selection-end-line="87" />
+            <state relative-caret-position="415">
+              <caret line="22" selection-start-line="22" selection-end-line="22" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/scHiCTools/load/mcool_dump.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="418">
+              <caret line="19" column="18" lean-forward="true" selection-start-line="19" selection-start-column="18" selection-end-line="19" selection-end-column="18" />
+              <folding>
+                <element signature="e#52#77#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/scHiCTools/load/cooler.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="-1914">
+              <caret column="23" selection-start-column="23" selection-end-column="23" />
+              <folding>
+                <element signature="e#24#35#0" expanded="true" />
+              </folding>
             </state>
           </provider>
         </entry>
@@ -154,11 +148,9 @@
         <option value="$PROJECT_DIR$/scHiCTools/functions/__init__.py" />
         <option value="$PROJECT_DIR$/scHiCTools/embedding/__init__.py" />
         <option value="$PROJECT_DIR$/scHiCTools/functions/preprocessing.py" />
-        <option value="$PROJECT_DIR$/scHiCTools/load/mcool_dump.py" />
         <option value="$PROJECT_DIR$/scHiCTools/load/ContactMap.py" />
         <option value="$PROJECT_DIR$/scHiCTools/analysis/__init__.py" />
         <option value="$PROJECT_DIR$/scHiCTools/analysis/clustering.py" />
-        <option value="$PROJECT_DIR$/scHiCTools/analysis/visualization.py" />
         <option value="$PROJECT_DIR$/scHiCTools/functions/normalization.py" />
         <option value="$PROJECT_DIR$/scHiCTools/load/__init__.py" />
         <option value="$PROJECT_DIR$/scHiCTools/__init__.py" />
@@ -172,6 +164,9 @@
         <option value="$PROJECT_DIR$/example/temp.py" />
         <option value="$PROJECT_DIR$/example/example.py" />
         <option value="$PROJECT_DIR$/scHiCTools/embedding/reproducibility.py" />
+        <option value="$PROJECT_DIR$/scHiCTools/analysis/visualization.py" />
+        <option value="$PROJECT_DIR$/scHiCTools/load/mcool_dump.py" />
+        <option value="$PROJECT_DIR$/scHiCTools/load/cooler.py" />
       </list>
     </option>
   </component>
@@ -355,13 +350,13 @@
     <frame x="-8" y="-8" width="1936" height="1056" extended-state="6" />
     <editor active="true" />
     <layout>
-      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.1923077" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.1923077" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info id="Favorites" order="2" side_tool="true" />
       <window_info anchor="bottom" id="Messages" order="0" />
       <window_info anchor="bottom" id="Message" order="1" />
       <window_info anchor="bottom" id="Find" order="2" weight="0.3286119" />
-      <window_info active="true" anchor="bottom" id="Run" order="3" visible="true" weight="0.31852654" />
+      <window_info anchor="bottom" id="Run" order="3" visible="true" weight="0.21668473" />
       <window_info anchor="bottom" id="Debug" order="4" weight="0.4" />
       <window_info anchor="bottom" id="Cvs" order="5" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="6" weight="0.4" />
@@ -398,16 +393,6 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/scHiCTools/functions/__init__.py" />
     <entry file="file://$PROJECT_DIR$/scHiCTools/analysis/__init__.py">
-      <provider selected="true" editor-type-id="text-editor" />
-    </entry>
-    <entry file="file://$PROJECT_DIR$/scHiCTools/load/mcool_dump.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="198">
-          <caret line="9" lean-forward="true" selection-start-line="9" selection-end-line="9" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/scHiCTools/analysis/visualization.py">
       <provider selected="true" editor-type-id="text-editor" />
     </entry>
     <entry file="file://$PROJECT_DIR$/scHiCTools/functions/preprocessing.py" />
@@ -458,15 +443,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="1914">
           <caret line="87" selection-start-line="87" selection-end-line="87" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/scHiCTools/analysis/clustering.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-727">
-          <folding>
-            <element signature="e#130#148#0" expanded="true" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -527,9 +503,19 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/scHiCTools/embedding/reproducibility.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="440">
+          <caret line="68" column="56" selection-start-line="68" selection-start-column="56" selection-end-line="68" selection-end-column="56" />
+          <folding>
+            <element signature="e#0#18#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/example/example.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="111">
+        <state relative-caret-position="418">
           <caret line="19" column="47" selection-start-line="19" selection-start-column="47" selection-end-line="19" selection-end-column="47" />
           <folding>
             <element signature="e#0#4#0" expanded="true" />
@@ -537,12 +523,38 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/scHiCTools/embedding/reproducibility.py">
+    <entry file="file://$PROJECT_DIR$/scHiCTools/analysis/clustering.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="220">
-          <caret line="58" column="45" selection-start-line="58" selection-start-column="45" selection-end-line="58" selection-end-column="45" />
+        <state relative-caret-position="-3857">
           <folding>
-            <element signature="e#0#18#0" expanded="true" />
+            <element signature="e#130#148#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/scHiCTools/analysis/visualization.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="415">
+          <caret line="22" selection-start-line="22" selection-end-line="22" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/scHiCTools/load/mcool_dump.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="418">
+          <caret line="19" column="18" lean-forward="true" selection-start-line="19" selection-start-column="18" selection-end-line="19" selection-end-column="18" />
+          <folding>
+            <element signature="e#52#77#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/scHiCTools/load/cooler.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-1914">
+          <caret column="23" selection-start-column="23" selection-end-column="23" />
+          <folding>
+            <element signature="e#24#35#0" expanded="true" />
           </folding>
         </state>
       </provider>
