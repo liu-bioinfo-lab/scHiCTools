@@ -1,5 +1,8 @@
 import numpy as np
-from .embedding_utils import tsne_search_prob
+import scipy.optimize as opt
+from scipy.sparse import csgraph
+import scipy.spatial.distance as dis
+from scipy.optimize import curve_fit
 
 
 def MDS(mat, n=2):
@@ -13,80 +16,331 @@ def MDS(mat, n=2):
     return co
 
 
-def tSNE(mat, dim=2, **kwargs):
+
+# tSNE :--------------------------------------------------
+
+def Hbeta(D, beta=1.0):
     """
-    Runs t-SNE on N * N distance matrix to reduce its dimensionality.
-    Referred to sklearn.manifold.t_sne and
-    https://blog.csdn.net/Flyingzhan/article/details/79521765
-
-    Args:
-        mat (numpy.array): N * N distance matrix
-        dim (int): dimension of embedded vectors
-
-    Additional Args:
-        tSNE_n_iter (int): iteration steps
-
-    Return:
-         co (numpy.array): embedded coordinates
+        Compute the perplexity and the P-row for a specific value of the
+        precision of a Gaussian distribution.
     """
-    n_samples = mat.shape[0]
-    assert isinstance(dim, int)
+    # Compute P-row and corresponding perplexity
+    P = np.exp(-D.copy() * beta)
+    sumP = sum(P)
+    H = np.log(sumP) + beta * np.sum(D * P) / sumP
+    P = P / sumP
+    return H, P
 
-    n_iter = kwargs.pop('tSNE_n_iter', 500)
-    initial_momentum = kwargs.pop('tSNE_initial_momentum', 0.5)
-    final_momentum = kwargs.pop('tSNE_final_momentum', 0.8)
-    eta = 500
-    min_gain = 0.01
 
-    y = np.random.randn(n_samples, dim)
-    dy = np.zeros((n_samples, dim))
-    iy = np.zeros((n_samples, dim))
-    gains = np.ones((n_samples, dim))
+def x2p(D, tol=1e-5, perplexity=30.0):
+    """
+        Performs a binary search to get P-values in such a way that each
+        conditional Gaussian has the same perplexity.
+    """
 
-    P = tsne_search_prob(mat, tol=kwargs.pop('tSNE_tol', 1e-5),
-                         perplexity=kwargs.pop('tSNE_perplexity', 30),
-                         initial_sigma=kwargs.pop('tSNE_initial_sigma', 1.0))
+    # Initialize some variables
+    n=len(D)
+    P = np.zeros((n, n))
+    beta = np.ones((n, 1))
+    logU = np.log(perplexity)
 
-    P = np.maximum(4 * P, 1e-12)
+    # Loop over all datapoints
+    for i in range(n):
 
-    # @Xinjun, 以下这部分我还没有检查梯度下降写得对不对，
-    # 请参考https://blog.csdn.net/Flyingzhan/article/details/79521765
+        # Compute the Gaussian kernel and entropy for the current precision
+        betamin = -np.inf
+        betamax = np.inf
+        Di = D[i, np.concatenate((np.r_[0:i], np.r_[i+1:n]))]
+        (H, thisP) = Hbeta(Di, beta[i])
 
-    for iter in range(n_iter):
+        # Evaluate whether the perplexity is within tolerance
+        Hdiff = H - logU
+        tries = 0
+        while np.abs(Hdiff) > tol and tries < 50:
+
+            # If not, increase or decrease precision
+            if Hdiff > 0:
+                betamin = beta[i].copy()
+                if betamax == np.inf or betamax == -np.inf:
+                    beta[i] = beta[i] * 2.
+                else:
+                    beta[i] = (beta[i] + betamax) / 2.
+            else:
+                betamax = beta[i].copy()
+                if betamin == np.inf or betamin == -np.inf:
+                    beta[i] = beta[i] / 2.
+                else:
+                    beta[i] = (beta[i] + betamin) / 2.
+
+            # Recompute the values
+            (H, thisP) = Hbeta(Di, beta[i])
+            Hdiff = H - logU
+            tries += 1
+
+        # Set the final row of P
+        P[i, np.concatenate((np.r_[0:i], np.r_[i+1:n]))] = thisP
+
+    return P
+
+
+
+def tSNE(mat,
+         n_dim=2,
+         perp=30.0,
+         iteration=1000,
+         momentum = 0.2,
+         eta = 500,
+         **kwargs):
+    """
+    This function is a slightly different implimentation of t-SNE.
+        In the function, instead of calculating the Euclidean distance,
+        the distance between different points is pass direct to the function.
+
+    Input:
+        mat: matrix contain the distance between every two point.
+                (should be symmetric)
+        n_dim: dimension of the space embedding in.
+        perp: perplexity
+        momentum:
+        rate: gredient decendent rate.
+
+    Output:
+        A matrix have n columns. Every row of the output matrix represent a point.
+
+    """
+
+    # Error messagers
+    if len(mat)!=len(mat[0]):
+        raise ValueError('mat is not a distance matrix!')
+    elif np.sum(mat.T!=mat)>0:
+        raise ValueError('mat is not a distance matrix!')
+    elif sum(np.diag(mat)!=0)!=0:
+        raise ValueError('mat is not a distance matrix!')
+
+
+    n=len(mat)
+    Y = np.random.randn(n, n_dim)
+    dY = np.zeros((n, n_dim))
+    iY = np.zeros((n, n_dim))
+    gains = np.ones((n, n_dim))
+
+    # Compute P-values
+    P = x2p(mat, 1e-5, perp)
+    P = P + np.transpose(P)
+    P = P / np.sum(P)
+    P = P * 4.									# early exaggeration
+    P = np.maximum(P, 1e-12)
+
+    # Run iterations
+    for iter in range(iteration):
+
         # Compute pairwise affinities
-        sum_y = np.sum(np.square(y), 1)
-        num = 1 / (1 + np.add(np.add(-2 * np.dot(y, y.T), sum_y).T, sum_y))
-        for i in range(n_samples):
-            num[i, i] = 0
+        sum_Y = np.sum(np.square(Y), 1)
+        num = -2. * np.dot(Y, Y.T)
+        num = 1. / (1. + np.add(np.add(num, sum_Y).T, sum_Y))
+        num[range(n), range(n)] = 0.
         Q = num / np.sum(num)
         Q = np.maximum(Q, 1e-12)
 
-        momentum = initial_momentum if iter <= n_iter // 10 else final_momentum
-
         # Compute gradient
-        delta = P - Q
-        for i in range(n_samples):
-            dy[i, :] = np.sum(np.tile(delta[:, i] * num[:, i], (dim, 1)).T * (y[i, :] - y), axis=0)
+        PQ = P - Q
+        for i in range(n):
+            dY[i, :] = np.sum(np.tile(PQ[:, i] * num[:, i], (n_dim, 1)).T * (Y[i, :] - Y), 0)
 
-        gains = (gains + 0.2) * ((dy > 0) != (iy > 0)) + (gains * 0.8) * ((dy > 0) == (iy > 0))
-        gains[gains < min_gain] = min_gain
-        iy = momentum * iy - eta * (gains * dy)
-        y = y + iy
-        y = y - np.tile(np.mean(y, 0), (n_samples, 1))
+        # Perform the update
+        gains = (gains + 0.2) * ((dY > 0.) != (iY > 0.)) + \
+                (gains * 0.8) * ((dY > 0.) == (iY > 0.))
+        iY = momentum * iY - eta * (gains * dY)
+        Y = Y + iY
+        Y = Y - np.tile(np.mean(Y, 0), (n, 1))
+
         # Compute current value of cost function
         if (iter + 1) % 100 == 0:
-            if iter > 100:
-                C = np.sum(P * np.log(P / Q))
-            else:
-                C = np.sum(P / 4 * np.log(P / 4 / Q))
-            print("Iteration ", (iter + 1), ": error is ", C)
+            C = np.sum(P * np.log(P / Q))
+            print("Iteration %d: error is %f" % (iter + 1, C))
+
         # Stop lying about P-values
         if iter == 100:
-            P = P / 4
-    print("finished training!")
-    return y
+            P = P / 4.
+        if np.sum(abs(iY))<.001:
+            break
+
+    return Y
 
 
-def UMAP(mat, n=2, **kwargs):
-    pass
 
+
+# UMAP algorithm :-----------------------------------------
+
+def LocalFuzzySimplicialSet(dist,x, n):
+
+    knn_dist=np.sort(dist)[1:n+1]
+    index=np.argsort(dist)[1:n+1]
+    rho=knn_dist[0]
+
+    # Function to solve
+    def f(s):
+        return(sum(np.exp(-(knn_dist-rho)/s))-np.log2(n))
+
+    #Binary search for sigma such that sum of exp(-(knn_dists-rho)/sigma) = log2(n)
+    if f(pow(.1,100))<=0:
+        sigma=opt.bisect(f,pow(.1,100),3*knn_dist[n-1])
+
+    fs_set=[]
+
+    for i in index:
+        d=max(0,dist[i]-rho)/sigma
+        fs_set.append([x,i,np.exp(-d)])
+
+    return(fs_set)
+
+
+def SpectralEmbedding(graph_matrix, d):
+    # G=np.zeros(shape=(n,n)) # graph matrix
+    # for x in fs_set:
+    #     G[x[0],x[1]]=x[2] # weighted adjacency matrix
+
+    L=csgraph.laplacian(graph_matrix, normed=True)
+    eig_vals, eig_vecs = np.linalg.eig(L)
+    eig_vecs= eig_vecs[:, (eig_vals.argsort())]
+
+    Y=eig_vecs[:,:d]
+    return Y
+
+
+def OptimizeEmbedding(fs_set,
+                      Y,
+                      min_dist,
+                      n_epochs,
+                      alpha=.1,
+                      n_neg_samples=10):
+    '''
+
+    '''
+
+    initial_alpha=alpha
+
+    # Find a and b
+    def curve(x, a, b):
+        return 1 / (1 + a * x ** (2 * b))
+    xv = np.linspace(0, 3, 300)
+    yv = np.zeros(xv.shape)
+    yv[xv < min_dist] = 1.0
+    yv[xv >= min_dist] = np.exp(-(xv[xv >= min_dist] - min_dist))
+    params, covar = curve_fit(curve, xv, yv)
+    a=params[0]
+    b=params[1]
+
+
+    for n in range(n_epochs):
+        alpha = initial_alpha * (1.0 - (n / n_epochs))
+        for elem in fs_set:
+            if np.random.rand()<elem[2]:
+                dist=dis.pdist([Y[elem[0]],Y[elem[1]]])
+                step = alpha*(
+                    1+a*pow(dist**2,b))*(
+                    -1)*pow((1+a*pow(dist**2,b)),-2
+                    )*a*b*pow(dist**2,b-1)*(
+                    Y[elem[0]]-Y[elem[1]])
+
+                if np.log(curve(dist,a,b)) < np.log(curve(dis.pdist([Y[elem[0]]+step,Y[elem[1]]]),a,b)):
+                    Y[elem[0]]+=step
+
+                for i in range(n_neg_samples):
+                    c = np.random.randint(len(Y)-1)
+                    if c>=elem[0]:
+                        c+=1
+                    dist=dis.pdist([Y[elem[0]],Y[c]])
+                    step = alpha*1/(
+                        1-1/(1+a*pow(dist**2,b))
+                        )*pow((1+a*pow(dist**2,b)),-2
+                        )*a*b*pow(dist**2,b-1)*(
+                        Y[elem[0]]-Y[c])/1000
+
+                    if np.log(1-curve(dist,a,b)) < np.log(1-curve(dis.pdist([Y[elem[0]]+step,Y[elem[1]]]),a,b)):
+                        Y[elem[0]]+=step
+
+    return Y
+
+
+def UMAP(mat,
+         dim=2,
+         n=5,
+         min_dist=1,
+         n_epochs=10,
+         alpha=1,
+         n_neg_samples=0):
+    '''
+
+
+    '''
+
+    fs_set=[]
+    for i in range(len(mat)):
+        fs_set=fs_set+LocalFuzzySimplicialSet(mat[i], i, n)
+
+    G=np.zeros(shape=(len(mat),len(mat))) # graph matrix
+    for x in fs_set:
+        G[x[0],x[1]]=x[2] # weighted adjacency matrix
+    G=(G+G.T)/2
+
+    Y=SpectralEmbedding(G, dim)
+    Y=OptimizeEmbedding(fs_set,
+                        Y,
+                        min_dist,
+                        n_epochs,
+                        alpha=alpha,
+                        n_neg_samples=n_neg_samples)
+
+    return(Y)
+
+
+
+
+# PHATE algorithm
+
+def PHATE(mat, n=2, k=2, a=1, **kwargs):
+    '''
+    Input: distance matrix mat,
+            desired embedding dimension n (usually 2 or 3 for visualization),
+            neighborhood size k,
+            locality scale a
+    Output: The PHATE embedding Yn
+
+    '''
+
+    epsilon=np.sort(mat, axis=0)[k-1]
+    K=mat
+    for i in range(len(mat)):
+        for j in range(len(mat[0])):
+            K[i][j]=np.exp(-pow(K[i][j]/epsilon[i],a))/2 +np.exp(-pow(K[i][j]/epsilon[j],a))/2
+
+    P=K/np.sum(K,axis=0)
+    P=P.transpose()
+
+    # Find t -------------------
+    t=2
+
+    eta=np.linalg.eigvals(P)
+    eta=pow(eta,t)
+    eta=eta/sum(eta)
+    Ht=-sum(eta*np.log(eta))
+
+    #-----------------
+
+    sm = np.sum(P, axis=1)
+    sm = np.where(sm == 0, 1, sm)
+    sm = np.tile(sm, (len(P), 1)).T
+    walk = P / sm
+    Pt = walk.T.dot(P).dot(walk)
+
+    Ut=-np.log(Pt)
+
+    Dt=mat
+    for i in range(len(Ut)):
+        for j in range(len(Ut[0])):
+            Dt[i][j]=np.linalg.norm(Ut[j]-Ut[i])
+
+    Y=MDS(Dt)
+
+    return(Y)
