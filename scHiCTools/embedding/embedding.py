@@ -1,9 +1,14 @@
+# -*- coding: utf-8 -*-
+
 import numpy as np
 import scipy.optimize as opt
 from scipy.sparse import csgraph
 import scipy.spatial.distance as dis
 from scipy.optimize import curve_fit
 
+
+
+# MDS :---------------------------------------------------
 
 def MDS(mat, n=2):
     # mat = np.sqrt(2 - 2 * mat)
@@ -14,6 +19,7 @@ def MDS(mat, n=2):
     co = np.real(v[:, max_].dot(np.sqrt(np.diag(w[max_]))))
     # co = np.real(v[:, :2].dot(np.sqrt(np.diag(w[:2]))))
     return co
+
 
 
 
@@ -89,8 +95,7 @@ def tSNE(mat,
          perp=30.0,
          iteration=1000,
          momentum = 0.2,
-         eta = 500,
-         **kwargs):
+         eta = 500):
     """
     This function is a slightly different implimentation of t-SNE.
         In the function, instead of calculating the Euclidean distance,
@@ -168,6 +173,32 @@ def tSNE(mat,
     return Y
 
 
+# SpectralEmbedding :----------------------------------
+# Takes in a graph adjecent matrix(instead of a distance matrix)
+
+def SpectralEmbedding(graph_matrix, dim):
+    '''
+    Parameters
+    ----------
+    graph_matrix : numpy array
+        adjecent matrix of the graph of points.
+    dim : int
+        Dimension of embedding space.
+
+    Returns
+    -------
+    Y : numpy array
+        Embedding points.
+
+    '''
+
+    L=csgraph.laplacian(graph_matrix, normed=True)
+    eig_vals, eig_vecs = np.linalg.eig(L)
+    eig_vecs= eig_vecs[:, (eig_vals.argsort())]
+
+    Y=eig_vecs[:,:dim]
+    return Y
+
 
 
 # UMAP algorithm :-----------------------------------------
@@ -193,19 +224,6 @@ def LocalFuzzySimplicialSet(dist,x, n):
         fs_set.append([x,i,np.exp(-d)])
 
     return(fs_set)
-
-
-def SpectralEmbedding(graph_matrix, d):
-    # G=np.zeros(shape=(n,n)) # graph matrix
-    # for x in fs_set:
-    #     G[x[0],x[1]]=x[2] # weighted adjacency matrix
-
-    L=csgraph.laplacian(graph_matrix, normed=True)
-    eig_vals, eig_vecs = np.linalg.eig(L)
-    eig_vecs= eig_vecs[:, (eig_vals.argsort())]
-
-    Y=eig_vecs[:,:d]
-    return Y
 
 
 def OptimizeEmbedding(fs_set,
@@ -272,6 +290,26 @@ def UMAP(mat,
          n_neg_samples=0):
     '''
 
+    Parameters
+    ----------
+    mat : numpy array
+        DESCRIPTION.
+    dim : int, optional
+        Dimension of embedding space. The default is 2.
+    n : TYPE, optional
+        DESCRIPTION. The default is 5.
+    min_dist : TYPE, optional
+        DESCRIPTION. The default is 1.
+    n_epochs : TYPE, optional
+        DESCRIPTION. The default is 10.
+    alpha : TYPE, optional
+        DESCRIPTION. The default is 1.
+    n_neg_samples : TYPE, optional
+        DESCRIPTION. The default is 0.
+
+    Returns
+    -------
+    Y : .
 
     '''
 
@@ -291,56 +329,144 @@ def UMAP(mat,
                         n_epochs,
                         alpha=alpha,
                         n_neg_samples=n_neg_samples)
+    return(Y)
+
+
+
+
+# PHATE algorithm :------------------------------
+
+def MMDS(dist_mat,
+         init,
+         momentum=.1, iteration=1000):
+    '''
+    Parameters
+    ----------
+    dist_mat : array
+        Distance matrix of the points.
+    init : array
+        Initial embedding.
+    momentum : float
+        Dimension of the embedding space. The default is 2.
+
+
+    Returns
+    -------
+    Y : array
+        Embedding points.
+
+    '''
+    # R is Dt
+    R=dist_mat
+    Y=init
+
+    def cost_fun(R, Y):
+        return(np.sum((R - dis.squareform(dis.pdist(Y)))**2)*.5)
+
+    def cost_grad(R,Y):
+        D=dis.squareform(dis.pdist(Y))
+        K=(R-D)/(D+1e-10)
+        G=np.zeros(Y.shape)
+        for i in range(len(Y)):
+            dyij=-(Y-Y[i])
+            G[i]=np.sum(dyij.T*K[:,i],axis=1)
+        return(-2*G)
+
+
+    for i in range(iteration):
+        step=-momentum*cost_grad(R,Y)
+        if cost_fun(R,Y)>cost_fun(R,Y+step):
+            Y=Y+step
+        momentum-=momentum/iteration
 
     return(Y)
 
 
 
 
-# PHATE algorithm
-
-def PHATE(mat, n=2, k=2, a=1, **kwargs):
-    '''
-    Input: distance matrix mat,
-            desired embedding dimension n (usually 2 or 3 for visualization),
-            neighborhood size k,
-            locality scale a
-    Output: The PHATE embedding Yn
-
-    '''
-
-    epsilon=np.sort(mat, axis=0)[k-1]
-    K=mat
-    for i in range(len(mat)):
-        for j in range(len(mat[0])):
-            K[i][j]=np.exp(-pow(K[i][j]/epsilon[i],a))/2 +np.exp(-pow(K[i][j]/epsilon[j],a))/2
-
-    P=K/np.sum(K,axis=0)
-    P=P.transpose()
-
-    # Find t -------------------
-    t=2
+def VNE(P, t):
 
     eta=np.linalg.eigvals(P)
     eta=pow(eta,t)
     eta=eta/sum(eta)
     Ht=-sum(eta*np.log(eta))
+    return(Ht)
 
-    #-----------------
 
-    sm = np.sum(P, axis=1)
-    sm = np.where(sm == 0, 1, sm)
-    sm = np.tile(sm, (len(P), 1)).T
-    walk = P / sm
-    Pt = walk.T.dot(P).dot(walk)
 
-    Ut=-np.log(Pt)
 
+def PHATE(mat, n=2, k=5, a=1, gamma=1, t_max=100):
+    '''
+
+
+    Parameters
+    ----------
+    mat : numpy array
+        Distance matrix.
+    n : int, optional
+        desired embedding dimension. The default is 2.
+    k : int, optional
+        neighborhood size. The default is 5.
+    a : float, optional
+        locality scale. The default is 1.
+    gamma : float, optional, must in [-1, 1]
+        Informational distance constant between -1 and 1. The default is 1.
+    t_max : int, optional
+        maximum time scale for diffusion. The default is 100.
+
+    Returns
+    -------
+    Yn : numpy array
+        The PHATE embedding matrix.
+
+    '''
+
+
+    epsilon=np.sort(mat, axis=0)[k-1]
+
+    # Local affinity matrix from distance matrix and epsilon
+    K=mat
+    for i in range(len(mat)):
+        for j in range(len(mat[0])):
+            K[i][j]=np.exp(-pow(K[i][j]/epsilon[i],a))/2 +np.exp(-pow(K[i][j]/epsilon[j],a))/2
+
+    # normalize K to form a Markov transition matrix
+    # (diffusion operator P)
+    P=K/np.sum(K,axis=0)
+    P=P.transpose()
+
+    # Find t(time scale via Von Neumann Entropy)
+    t=1
+    c=(VNE(P,1)-VNE(P,t_max))/t_max
+    while (VNE(P,t)-VNE(P,t+1))>c:
+        t+=1
+
+
+    # Diffuse P for t time steps to obtain Pt
+    Pt = np.linalg.matrix_power(P, t)
+
+    # Compute potential representations Ut
+    if gamma == 1:
+        # handling small values
+        Pt = Pt + 1e-7
+        Ut = -1 * np.log(Pt)
+    elif gamma == -1:
+        Ut = Pt
+    else:
+        c = (1 - gamma) / 2
+        Ut = (Pt ** c) / c
+
+
+    # compute potential distance matrix from Ut
     Dt=mat
     for i in range(len(Ut)):
         for j in range(len(Ut[0])):
             Dt[i][j]=np.linalg.norm(Ut[j]-Ut[i])
 
+    # apply classical MDS to Dt
     Y=MDS(Dt)
+
+    # apply metric MDS to Dt with Y as an initialization
+    Y=MMDS(Dt,Y,n)
 
     return(Y)
