@@ -19,7 +19,7 @@ class scHiCs:
             resolution (int): resolution: the resolution to separate genome into bins. If using .hic file format,
             the given resolution must match with the resolutions in .hic file.
             sparse (bool): whether to use sparse matrix to store (only effective when max_distance=None), default: False
-            format (str): e.g., '.hic' or 'customized', default: 'customized'
+            format (str): e.g., '.hic', 'customized', '.cool', default: 'customized'
             customized_format (int or list): format for each line (see README)
             chromosomes (list or str): chromosomes to use, eg. ['chr1', 'chr2'], or just 'except Y', 'except XY',
             'all', default: 'all', which means chr 1-19 + XY for mouse and chr 1-22 + XY for human
@@ -131,7 +131,7 @@ class scHiCs:
 
         Args:
             similarity_method (str): 'inner_product', 'HiCRep' or 'Selfish'
-            embedding_method (str): 'MDS', 'tSNE' or 'UMAP'
+            embedding_method (str): 'MDS', 'tSNE', 'UMAP', 'phate', 'spectral_embedding'.
             aggregation (str): 'mean' or 'median'
             dim (int): dimension of the embedding
             n_strata (int): only consider contacts within this genomic distance, default: None.
@@ -151,11 +151,24 @@ class scHiCs:
         assert n_strata is not None or self.keep_n_strata is not None
         n_strata = n_strata if n_strata is not None else self.keep_n_strata
         new_strata = self.cal_strata(n_strata)
-        for ch in self.chromosomes:
-            print(ch)
-            distance_mat = pairwise_distances(new_strata[ch], similarity_method=similarity_method,
+        if print_time:
+            time1=0
+            time2=0
+            for ch in self.chromosomes:
+                print(ch)
+                distance_mat,t1,t2 = pairwise_distances(new_strata[ch], similarity_method=similarity_method,
                                               print_time=print_time, **kwargs)
-            distance_matrices.append(distance_mat)
+                time1=time1+t1
+                time2=time2+t2
+                distance_matrices.append(distance_mat)
+            print('Sum of time 1:',time1)
+            print('Sum of time 2:',time2)
+        else:
+            for ch in self.chromosomes:
+                print(ch)
+                distance_mat = pairwise_distances(new_strata[ch], similarity_method=similarity_method,
+                                        print_time=print_time, **kwargs)
+                distance_matrices.append(distance_mat)
         distance_matrices = np.array(distance_matrices)
 
         if aggregation == 'mean':
@@ -170,8 +183,18 @@ class scHiCs:
             embeddings = MDS(final_distance, dim)
         elif embedding_method == 'tsne':
             embeddings = tSNE(final_distance, dim, **kwargs)
-        else:
+        elif embedding_method == 'umap':
             embeddings = UMAP(final_distance, dim, **kwargs)
+        elif embedding_method == 'phate':
+            embeddings = PHATE(final_distance, dim, **kwargs)
+        elif embedding_method == 'spectral_embedding':
+            graph_matrix=np.exp(-np.square(final_distance)/np.mean(final_distance**2))
+            graph = graph-np.diag(graph.diagonal())
+            embeddings = SpectralEmbedding(graph_matrix, dim)
+        else:
+            raise ValueError('Embedding method {0} not supported. '.format(embedding_method))
+
+
 
         if return_distance:
             return embeddings, final_distance
