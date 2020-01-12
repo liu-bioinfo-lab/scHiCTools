@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 
  Clustering component of scHiCTools
@@ -94,14 +95,14 @@ def spectral_clustering(data,
         elif sum(np.diag(data)!=0)!=0:
             raise ValueError('data is not a distance matrix!')
         # using fully connected graph with Gaussian similarity function
-        graph=np.exp(-np.square(data)/np.mean(data))
+        graph=np.exp(-np.square(data)/np.mean(data**2))
     elif data_type=='points':
         # pair-wise Euclidean distance
         graph = dis.pdist(data)
         graph = dis.squareform(graph)
         # graph = np.add(np.add(-2 * np.dot(data, data.T), graph).T, graph)
         # using fully connected graph with Gaussian similarity function
-        graph = np.exp(-np.square(graph)/np.mean(graph))
+        graph = np.exp(-np.square(graph)/np.mean(graph**2))
     else:
         raise ValueError('data_type is not supported.')
 
@@ -136,7 +137,7 @@ def spectral_clustering(data,
     # Clustering using k-means
     label=kmeans(U,k=n_clusters,**kwargs)
 
-    return(label,U)
+    return(label)
 
 
 
