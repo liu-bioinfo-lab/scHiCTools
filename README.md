@@ -11,18 +11,22 @@ A computational toolbox for analyzing single cell Hi-C (high-throughput sequenci
   - Python (version >= 3.6)
   - numpy (version >= 1.15.4)
   - scipy (version >= 1.0)
-  
+
   **Install from GitHub**
-  
+
   You can install the package with following command:
+
   ```console
-  % install (will be updated later)
+    $ git clone https://github.com/liu-bioinfo-lab/scHiCTools.git
+    $ cd scHiCTools
+    $ python setup.py install
   ```
-  Or directly download "scHiCTools-master.zip" from GitHub.
+
   
+
 ### Usage
    **Supported Formats**
-  
+
   - Pre-processed Matrices:
   If the data is already processed into matrices for intra-chromosomal contacts,
   the chromosome from the same cell must be stored in the same folder with
@@ -33,7 +37,7 @@ A computational toolbox for analyzing single cell Hi-C (high-throughput sequenci
     - matrix: matrix stored as pure text
     - matrix_txt: matrix stored as .txt file
     - HiCRep: the format required by HiCRep package
-  
+
   - Edge List <br />
    For all formats below:<br />
    &nbsp; str - strand (forward / reverse)<br />
@@ -42,7 +46,7 @@ A computational toolbox for analyzing single cell Hi-C (high-throughput sequenci
    &nbsp; score - contact reads<br />
    &nbsp; frag - fragments (will be ignored)<br />
    &nbsp; mapq - map quality<br />
-  
+
     - Shortest
      ```
     <chr1> <pos1> <chr2> <pos2>
@@ -73,9 +77,9 @@ A computational toolbox for analyzing single cell Hi-C (high-throughput sequenci
     #columns: readID chr1 position1 chr2 position2 strand1 strand2
      ```
    - .hic format: we adapted "straw" from JuiceTools.
- 
+
    - .mcool format: we adapted "dump" from cool.
- 
+
    - Other formats: simply give the indices (start from 1) in the order of<br />
  "chromosome1 - position1 - chromosome2 - position2 - score" or<br />
  "chromosome1 - position1 - chromosome2 - position2" or<br />
@@ -85,17 +89,17 @@ A computational toolbox for analyzing single cell Hi-C (high-throughput sequenci
    <name> <chromosome1> <position1> <frag1> <chromosome2> <position2> <frag2> <strand1> <strand2>
    contact_1 chr1 3000000 1 chr1 3001000 1 + -
    ```
-  
+
   **Import Package**
   ```console
   >>>import scHiCTools
   ```
-  
+
   **Load scHiC data**
-  
+
   The scHiC data is stored in a series of files, with each of the files corresponding to one cell.
   You need to specify the list of scHiC file paths.
-  
+
   Only intra-chromosomal interactions are counted.
   ```console
   >>>from scHiCTools import scHiCs
@@ -143,7 +147,7 @@ A computational toolbox for analyzing single cell Hi-C (high-throughput sequenci
   Default: None.
   - For preprocessing and smoothing operations, sometimes you need additional arguments
   (introduced in next sub-section).
-  
+
   You can also skip pre-processing and smoothing in loading step (operations=None),
   and do them in next lines:
   ```console
@@ -159,18 +163,18 @@ A computational toolbox for analyzing single cell Hi-C (high-throughput sequenci
     - epsilon: default: 1
   - power: new_W_ij = (W_ij)^pow. Additional argument:
     - pow: default: 0.5 (i.e., sqrt(W_ij))
-  
+
   - VC_norm: VC normalization - each value divided by the sum of
   corresponding row then divided by the sum of corresponding column
   - VC_SQRT_norm: VC_SQRT normalization - each value divided by the sqrt of the sum
   of corresponding row then divided by the sqrt of the sum of corresponding column
   - KR_norm: KR normalization - iterating until the sum of each row / column is one
   Argument:
-    - maximum_error_rate (float): iteration ends when max error is smaller 
+    - maximum_error_rate (float): iteration ends when max error is smaller
     than (maximum_error_rate). Default: 1e-4
   - OE_norm: OE normalization -  each value divided by the average of its
   corresponding strata (diagonal line)
-  
+
   - convolution: smoothing with a N by N convolution kernel, with each value equal to 1/N^2.
   Argument:
     - kernel_shape: an integer. e.g. kernel_shape=3 means a 3*3 matrix with each value = 1/9. Default: 3.
@@ -183,7 +187,7 @@ A computational toolbox for analyzing single cell Hi-C (high-throughput sequenci
     - kNN: value 'k' in kNN. Default: 20.
     - iterations: number of iterations for network enhancing. Default: 1
     - alpha: similar with random_walk_ratio. Default: 0.9
-  
+
   **Learn Embeddings**
   ```console
   >>>embs = loaded_data.learn embedding(
@@ -225,4 +229,3 @@ B. Wang, A. Pourshafeie, M. Zitnik, J. Zhu, C. D. Bustamante, S. Batzoglou, andJ
 T. Yang, F. Zhang, G. G. Y. mcı, F. Song, R. C. Hardison, W. S. Noble, F. Yue, andQ. Li. HiCRep: assessing the reproducibility of Hi-C data using a stratum-adjusted correlation coefficient.Genome Research, 27(11):1939–1949, 2017.
 
 G.  G.  Yardımcı,   H.  Ozadam,   M.  E.  Sauria,   O.  Ursu,   K. K.  Yan,   T.  Yang,A. Chakraborty, A. Kaul, B. R. Lajoie, F. Song, et al. Measuring the reproducibilityand quality of hi-c data.Genome Biology, 20(1):57, 2019.
-
