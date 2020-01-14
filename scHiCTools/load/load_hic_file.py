@@ -8,7 +8,7 @@ import numpy as np
 from gzip import open as gopen
 import os.path
 from .hic_straw import straw
-from .cool import read_cool
+from .cool import dump
 from .processing_utils import matrix_operation
 
 my_path = os.path.abspath(os.path.dirname(__file__))
@@ -167,7 +167,7 @@ def load_HiC(file, genome_length, format=None, custom_format=None, header=0, chr
         if format in ['hic', '.hic']:
             gen = straw('NONE', file, chromosome, chromosome, 'BP', resolution)
         elif format in ['mcool', 'cool', '.cool', '.mcool']:
-            gen = read_cool(file, chrom=chromosome, resolution=resolution, resolution_adjust=resolution_adjust)
+            gen = dump(file, range=chromosome, range2=chromosome, resolution=resolution, header=header > 0)
 
         # text files
         elif format == 'shortest':
