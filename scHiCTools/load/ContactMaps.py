@@ -2,8 +2,10 @@ import numpy as np
 from copy import deepcopy
 from scipy.sparse import coo_matrix
 from .load_hic_file import get_chromosome_lengths, load_HiC
-from ..embedding import pairwise_distances, MDS, tSNE, UMAP
+from ..embedding import pairwise_distances, MDS, tSNE, UMAP, PHATE, SpectralEmbedding
 from .processing_utils import matrix_operation
+from ..analysis import scatter
+from ..analysis import kmeans, spectral_clustering, HAC
 
 
 class scHiCs:
@@ -147,7 +149,7 @@ class scHiCs:
             distance_matrix numpy.array: (shape: num_of_cells * num_of_cells)
         """
         distance_matrices = []
-        assert embedding_method.lower() in ['mds', 'tsne', 'umap']
+        assert embedding_method.lower() in ['mds', 'tsne', 'umap', 'phate', 'spectral_embedding']
         assert n_strata is not None or self.keep_n_strata is not None
         n_strata = n_strata if n_strata is not None else self.keep_n_strata
         new_strata = self.cal_strata(n_strata)
@@ -188,9 +190,9 @@ class scHiCs:
         elif embedding_method == 'phate':
             embeddings = PHATE(final_distance, dim, **kwargs)
         elif embedding_method == 'spectral_embedding':
-            graph_matrix=np.exp(-np.square(final_distance)/np.mean(final_distance**2))
+            graph=np.exp(-np.square(final_distance)/np.mean(final_distance**2))
             graph = graph-np.diag(graph.diagonal())
-            embeddings = SpectralEmbedding(graph_matrix, dim)
+            embeddings = SpectralEmbedding(graph, dim)
         else:
             raise ValueError('Embedding method {0} not supported. '.format(embedding_method))
 
@@ -200,3 +202,55 @@ class scHiCs:
             return embeddings, final_distance
         else:
             return embeddings
+    
+    
+    def clustering(self,
+                   n_clusters,
+                   clustering_method,
+                   similarity_method,
+                   aggregation='median', n_strata=None,
+                   **kwargs):
+        
+        
+        distance_matrices = []
+        assert n_strata is not None or self.keep_n_strata is not None
+        n_strata = n_strata if n_strata is not None else self.keep_n_strata
+        new_strata = self.cal_strata(n_strata)
+        
+        for ch in self.chromosomes:
+            print(ch)
+            distance_mat = pairwise_distances(new_strata[ch],
+                            similarity_method=similarity_method,
+                            print_time=False, **kwargs)
+            distance_matrices.append(distance_mat)
+        distance_matrices = np.array(distance_matrices)
+
+        if aggregation == 'mean':
+            final_distance = np.mean(distance_matrices, axis=0)
+        elif aggregation == 'median':
+            final_distance = np.median(distance_matrices, axis=0)
+        else:
+            raise ValueError('Aggregation method {0} not supported. Only "mean" or "median".'.format(aggregation))
+        
+        if clustering_method=='kmeans':
+            embeddings = MDS(final_distance, dim)
+            label=kmeans(embeddings,
+                         k=n_clusters,
+                         **kwargs)
+        elif clustering_method=='spectral_clustering':
+            label=spectral_clustering(final_distance,
+                                      data_type='distance_matrix',
+                                      n_clusters=n_clusters,
+                                      **kwargs) 
+        elif clustering_method=='HAC':
+            label=HAC(final_distance,
+                      data_type='distance_matrix',
+                      n_clusters=n_clusters,
+                      **kwargs)
+        else:
+            raise ValueError('Embedding method {0} not supported. '.format(clustering_method))
+        
+        return label
+        
+        
+
