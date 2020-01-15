@@ -14,7 +14,8 @@ import scipy.spatial.distance as dis
 from scipy.sparse import csgraph
 
 
-def kmeans(data, k=4,
+def kmeans(data,
+           k=4,
            weights=None, iteration=1000):
     """
     This function is a impliment of K-Means algorithm.
@@ -78,8 +79,8 @@ def spectral_clustering(data,
     Input:
         data: a numpy array,
             can either be a matrix which every row represent a point
-            or a graph similarity matrix.
-        data_type: specify the type of data input.
+            or a distance matrix.
+        data_type: specify the type of data input. Must be in either 'points' or 'distance_matrix'.
         n_clusters: number of clusters.
         normalize: Whether to use unnormalized or normalized spectral clustering.
     Output:
@@ -87,7 +88,7 @@ def spectral_clustering(data,
     """
 
     # compute graph similarity matrix
-    if data_type=='graph' and len(data)==len(data[0]):
+    if data_type=='distance_matrix' and len(data)==len(data[0]):
         if len(data)!=len(data[0]):
             raise ValueError('data is not a distance matrix!')
         elif np.sum(data.T!=data)>0:
@@ -169,7 +170,7 @@ def HAC(data,
     """
 
     # compute graph similarity matrix
-    if data_type=='graph' and len(data)==len(data[0]):
+    if data_type=='distance_matrix' and len(data)==len(data[0]):
         if len(data)!=len(data[0]):
             raise ValueError('data is not a distance matrix!')
         elif np.sum(data.T!=data)>0:
@@ -177,13 +178,13 @@ def HAC(data,
         elif sum(np.diag(data)!=0)!=0:
             raise ValueError('data is not a distance matrix!')
         # using fully connected graph with Gaussian similarity function
-        graph=np.exp(-np.square(data)/np.mean(data)) # sigma?
+        graph=np.exp(-np.square(data)/np.mean(data**2)) # sigma?
     elif data_type=='points':
         # pair-wise Euclidean distance
         graph = np.sum(np.square(data), 1)
         graph = np.add(np.add(-2 * np.dot(data, data.T), graph).T, graph)
         # using fully connected graph with Gaussian similarity function
-        graph = np.exp(-graph/np.mean(graph)) # sigma?
+        graph = np.exp(-graph/np.mean(graph**2)) # sigma?
     else:
         raise ValueError('data_type is not supported.')
 
