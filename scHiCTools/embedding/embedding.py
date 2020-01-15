@@ -216,6 +216,8 @@ def LocalFuzzySimplicialSet(dist,x, n):
     #Binary search for sigma such that sum of exp(-(knn_dists-rho)/sigma) = log2(n)
     if f(pow(.1,100))<=0:
         sigma=opt.bisect(f,pow(.1,100),3*knn_dist[n-1])
+    else:
+        sigma=1
 
     fs_set=[]
 
@@ -293,11 +295,11 @@ def UMAP(mat,
     Parameters
     ----------
     mat : numpy array
-        DESCRIPTION.
+        distance matrix.
     dim : int, optional
         Dimension of embedding space. The default is 2.
     n : TYPE, optional
-        DESCRIPTION. The default is 5.
+        neighborhood size. The default is 5.
     min_dist : TYPE, optional
         DESCRIPTION. The default is 1.
     n_epochs : TYPE, optional
@@ -309,7 +311,8 @@ def UMAP(mat,
 
     Returns
     -------
-    Y : .
+    Y :  numpy array
+        embedding points.
 
     '''
 
@@ -395,7 +398,7 @@ def VNE(P, t):
 
 
 
-def PHATE(mat, n=2, k=5, a=1, gamma=1, t_max=100):
+def PHATE(mat, dim=2, k=5, a=1, gamma=1, t_max=100):
     '''
 
 
@@ -403,7 +406,7 @@ def PHATE(mat, n=2, k=5, a=1, gamma=1, t_max=100):
     ----------
     mat : numpy array
         Distance matrix.
-    n : int, optional
+    dim : int, optional
         desired embedding dimension. The default is 2.
     k : int, optional
         neighborhood size. The default is 5.
@@ -422,7 +425,7 @@ def PHATE(mat, n=2, k=5, a=1, gamma=1, t_max=100):
     '''
 
 
-    epsilon=np.sort(mat, axis=0)[k-1]
+    epsilon=np.sort(mat, axis=0)[k]
 
     # Local affinity matrix from distance matrix and epsilon
     K=mat
@@ -464,9 +467,9 @@ def PHATE(mat, n=2, k=5, a=1, gamma=1, t_max=100):
             Dt[i][j]=np.linalg.norm(Ut[j]-Ut[i])
 
     # apply classical MDS to Dt
-    Y=MDS(Dt)
+    Y=MDS(Dt,dim)
 
     # apply metric MDS to Dt with Y as an initialization
-    Y=MMDS(Dt,Y,n)
+    Y=MMDS(Dt,Y,dim)
 
     return(Y)
