@@ -109,7 +109,8 @@ def file_line_generator(file, chrom=None, header=0, format=None, resolution=1,
         # pos1 pos2
         p1, p2 = int(lst[format[1]-1]), int(lst[format[3]-1])
         if resolution_adjust:
-            p1, p2 = p1 // resolution * resolution, p2 // resolution * resolution
+            p1 = p1 // resolution #* resolution
+            p2 = p2 // resolution #* resolution
 
         if len(format) == 4 or len(format) == 6:  # [chr1 pos1 chr2 pos2]
             v = 1.0
