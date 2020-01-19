@@ -1,7 +1,9 @@
 import setuptools
+from os import path
 
-with open("README.md", "rb") as fh:
-    long_description = fh.read()
+this_directory = path.abspath(path.dirname(__file__))
+with open(path.join(this_directory, 'README.md'), encoding='utf-8') as f:
+    long_description = f.read()
 
 
 def get_requirements(path):
@@ -25,11 +27,11 @@ setuptools.setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/liu-bioinfo-lab/scHiCTool",
-    packages=setuptools.find_packages(exclude=['test']),
+    packages=setuptools.find_packages(),
     install_requires=install_requires,
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
-    ],
+    ]
 )
