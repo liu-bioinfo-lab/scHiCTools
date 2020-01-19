@@ -1,0 +1,12 @@
+package:
+  name: schictools
+  version: 0.0.1
+  setup_py_install: true
+
+python:
+  version: 3.6
+  install:
+    - requirements: requirements.txt
+
+about:
+  summary: This is a computational tool for analyzing single cell Hi-C data.
