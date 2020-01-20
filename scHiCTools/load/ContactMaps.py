@@ -83,6 +83,9 @@ class scHiCs:
                     for strata_idx, stratum in enumerate(strata):
                         self.strata[ch][strata_idx][idx, :] = stratum
 
+
+
+
     def cal_strata(self, n_strata):
         if self.full_maps is None:
             if self.keep_n_strata <= n_strata:
@@ -112,6 +115,9 @@ class scHiCs:
                         for i in range(self.keep_n_strata, n_strata):
                             self.strata[ch][i][idx, :] = np.diag(fmap[i:, :-i])
                 return deepcopy(self.strata)
+
+
+
 
     def processing(self, operations, **kwargs):
         if self.full_maps is None:
@@ -179,7 +185,9 @@ class scHiCs:
             final_distance = np.median(distance_matrices, axis=0)
         else:
             raise ValueError('Aggregation method {0} not supported. Only "mean" or "median".'.format(aggregation))
-
+            
+        np.fill_diagonal(final_distance, 0)
+        
         embedding_method = embedding_method.lower()
         if embedding_method == 'mds':
             embeddings = MDS(final_distance, dim)
