@@ -67,11 +67,12 @@ def pairwise_distances(all_strata, similarity_method, print_time, **kwargs):
                     s1, s2 = np.delete(s1, zero_pos), np.delete(s2, zero_pos)
                     weights.append(len(s1) * np.std(s1) * np.std(s2))
                     corrs.append(np.corrcoef(s1, s2)[0, 1])
+                corrs=np.nan_to_num(corrs)
                 s = np.inner(corrs, weights) / np.sum(weights)
                 similarity[i, j] = s
                 similarity[j, i] = s
-        distance_mat = np.sqrt(2 - 2 * similarity)
         t1 = time()
+        distance_mat = np.sqrt(2 - 2 * similarity)
         t2 = time()
 
 
@@ -105,8 +106,9 @@ def pairwise_distances(all_strata, similarity_method, print_time, **kwargs):
 
     else:
         raise ValueError('Method {0} not supported. Only "inner_product", "HiCRep" and "Selfish".'.format(method))
-
-    print('Time 1:', t1 - t0)
-    print('Time 2:', t2 - t1)
+        
+    if print_time:
+        print('Time 1:', t1 - t0)
+        print('Time 2:', t2 - t1)
     return distance_mat
 
