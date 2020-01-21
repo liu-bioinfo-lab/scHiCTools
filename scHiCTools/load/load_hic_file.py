@@ -80,16 +80,12 @@ def file_line_generator(file, chrom=None, header=0, format=None, resolution=1,
 
     No return value. Yield a line each time in the format of (position_1, position_2, contact_reads).
     """
-    count = 0
+
     f = gopen(file) if gzip else open(file)
     if header:
         for _ in range(header):
             next(f)
     for line in f:
-        count += 1
-        if count % 100000 == 0:
-            print('Line: ', count)
-
         lst = line.strip().split()
         if len(format) not in [4, 5, 6]:
             raise ValueError('Wrong custom format!')
@@ -109,8 +105,8 @@ def file_line_generator(file, chrom=None, header=0, format=None, resolution=1,
         # pos1 pos2
         p1, p2 = int(lst[format[1]-1]), int(lst[format[3]-1])
         if resolution_adjust:
-            p1 = p1 // resolution #* resolution
-            p2 = p2 // resolution #* resolution
+            p1 = p1 // resolution  # * resolution
+            p2 = p2 // resolution  # * resolution
 
         if len(format) == 4 or len(format) == 6:  # [chr1 pos1 chr2 pos2]
             v = 1.0
@@ -120,6 +116,7 @@ def file_line_generator(file, chrom=None, header=0, format=None, resolution=1,
             raise ValueError('Wrong custom format!')
 
         yield p1, p2, v
+    f.close()
 
 
 def load_HiC(file, genome_length, format=None, custom_format=None, header=0, chromosome=None,
@@ -220,7 +217,11 @@ def load_HiC(file, genome_length, format=None, custom_format=None, header=0, chr
             raise ValueError('Unrecognized format: ' + format)
 
         mat = np.zeros((size, size))
+        count = 0
         for p1, p2, val in gen:
+            count += 1
+            if count % 100000 == 0:
+                print('Line: ', count)
             # print(chromosome, p1, p2, val)
             mat[p1, p2] += val
             if p1 != p2:
