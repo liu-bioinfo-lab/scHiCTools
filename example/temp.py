@@ -1,14 +1,30 @@
-import numpy as np
-from scipy.stats import zscore
+from time import time
+import sys
+sys.path.insert(0, '../')
+print(sys.path)
+from scHiCTools import scHiCs
 
 
-# x = np.array([[1, 2, 3], [6, 3, 4]])
-# y = np.mean(x, axis=1)
-# print(x)
-# print(y)
-# print(x - y[:, None])
+# Learn the embeddings of cell_01, cell_02 and cell_03
+# Time:
+# Time 0: input I/O and pre-processing
+# Time 1: process each strata
+# Time 2: calculating pairwise similarity
 
-s1 = [0, 2, 0, 3, 4]
-s2 = [0, 0, 0, 5, 2]
-zero_pos = [k for k in range(len(s1)) if s1[k] == 0 and s2[k] == 0]
-print(zero_pos)
+t0 = time()
+x = scHiCs(['cell_01'], reference_genome='mm9', resolution=500000, max_distance=4000000,
+           format='shortest_score', resolution_adjust=False, chromosomes=['chr1'], store_full_map=True
+           )
+print(x.full_maps['chr1'][0])
+
+x.processing(['random_walk', 'network_enhancing'])
+print(x.full_maps['chr1'][0])
+
+x = scHiCs(['cell_01'], reference_genome='mm9', resolution=500000, max_distance=4000000,
+           format='shortest_score', resolution_adjust=False, chromosomes=['chr1'], store_full_map=True,
+           operations=['random_walk', 'network_enhancing'])
+print(x.full_maps['chr1'][0])
+
+
+
+

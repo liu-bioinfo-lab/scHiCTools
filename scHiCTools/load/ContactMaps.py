@@ -83,9 +83,6 @@ class scHiCs:
                     for strata_idx, stratum in enumerate(strata):
                         self.strata[ch][strata_idx][idx, :] = stratum
 
-
-
-
     def cal_strata(self, n_strata):
         if self.full_maps is None:
             if self.keep_n_strata <= n_strata:
@@ -116,19 +113,16 @@ class scHiCs:
                             self.strata[ch][i][idx, :] = np.diag(fmap[i:, :-i])
                 return deepcopy(self.strata)
 
-
-
-
     def processing(self, operations, **kwargs):
         if self.full_maps is None:
             raise ValueError('No full maps stored. Processing is not doable.')
         if self.sparse:
             for ch in self.chromosomes:
-                for i, mat in enumerate(self.full_maps):
+                for i, mat in enumerate(self.full_maps[ch]):
                     self.full_maps[ch][i] = coo_matrix(matrix_operation(mat.toarray(), operations, **kwargs))
         else:
             for ch in self.chromosomes:
-                for i, mat in enumerate(self.full_maps):
+                for i, mat in enumerate(self.full_maps[ch]):
                     self.full_maps[ch][i, :, :] = matrix_operation(mat, operations, **kwargs)
 
     def learn_embedding(self, similarity_method, embedding_method,
