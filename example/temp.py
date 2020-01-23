@@ -12,19 +12,10 @@ from scHiCTools import scHiCs
 # Time 2: calculating pairwise similarity
 
 t0 = time()
-x = scHiCs(['cell_01'], reference_genome='mm9', resolution=500000, max_distance=4000000,
+x = scHiCs(['cell_01', 'cell_02', 'cell_03'], reference_genome='mm9', resolution=500000, keep_n_strata=10,
            format='shortest_score', resolution_adjust=False, chromosomes=['chr1'], store_full_map=True
            )
-print(x.full_maps['chr1'][0])
+print(x.learn_embedding('inner_product', 'MDS', dim=2, n_strata=10))
 
 x.processing(['random_walk', 'network_enhancing'])
-print(x.full_maps['chr1'][0])
-
-x = scHiCs(['cell_01'], reference_genome='mm9', resolution=500000, max_distance=4000000,
-           format='shortest_score', resolution_adjust=False, chromosomes=['chr1'], store_full_map=True,
-           operations=['random_walk', 'network_enhancing'])
-print(x.full_maps['chr1'][0])
-
-
-
-
+print(x.learn_embedding('inner_product', 'MDS', dim=2, n_strata=10))

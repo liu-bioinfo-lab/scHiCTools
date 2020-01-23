@@ -124,6 +124,12 @@ class scHiCs:
             for ch in self.chromosomes:
                 for i, mat in enumerate(self.full_maps[ch]):
                     self.full_maps[ch][i, :, :] = matrix_operation(mat, operations, **kwargs)
+        # Update the strata
+        if self.keep_n_strata is not None:
+            for ch in self.chromosomes:
+                for i, mat in enumerate(self.full_maps[ch]):
+                    for j in range(self.keep_n_strata):
+                        self.strata[ch][j][i, :] = np.diag(mat[j:, :len(mat) - j])
 
     def learn_embedding(self, similarity_method, embedding_method,
                         dim=2, aggregation='median', n_strata=None, return_distance=False, print_time=False,
