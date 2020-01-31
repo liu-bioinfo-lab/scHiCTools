@@ -20,7 +20,7 @@ install_requires = get_requirements('requirements.txt')
 
 setuptools.setup(
     name="scHiCTools",
-    version="0.0.1",
+    version="0.0.2",
     author="Fan Feng",
     author_email="fanfeng@umich.edu",
     description="A user-friendly package for processing single cell HiC data",
