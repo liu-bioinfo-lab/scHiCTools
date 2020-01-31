@@ -50,13 +50,12 @@ def scatter(data, dimension="2D", point_size=3, sty='default',
 
         # Plot with label
         if label is not None:
-            fig, subplot = plt.subplots()
             lab=list(set(label))
             for index, l in enumerate(lab):
-                subplot.scatter(data[label==l,0], data[label==l,1],
+                plt.scatter(data[label==l,0], data[label==l,1],
                                 c='C{!r}'.format(index),
                                 s=point_size, label=l,
-                                alpha=alpha, edgecolors='none')
+                                alpha=alpha, **kwargs)
             plt.legend(**kwargs)
         # Plot without label
         else:
