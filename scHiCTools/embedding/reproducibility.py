@@ -110,5 +110,7 @@ def pairwise_distances(all_strata, similarity_method, print_time, **kwargs):
     if print_time:
         print('Time 1:', t1 - t0)
         print('Time 2:', t2 - t1)
-    return distance_mat
+        return distance_mat, t1 - t0, t2 - t1
+    else:
+        return distance_mat
 
