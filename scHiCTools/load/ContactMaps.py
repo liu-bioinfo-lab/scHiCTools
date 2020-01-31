@@ -164,8 +164,7 @@ class scHiCs:
             time2=0
             for ch in self.chromosomes:
                 print(ch)
-                distance_mat,t1,t2 = pairwise_distances(new_strata[ch], similarity_method=similarity_method,
-                                              print_time=print_time, **kwargs)
+                distance_mat,t1,t2 = pairwise_distances(new_strata[ch], similarity_method=similarity_method, print_time=print_time, **kwargs)
                 time1=time1+t1
                 time2=time2+t2
                 distance_matrices.append(distance_mat)
@@ -240,8 +239,10 @@ class scHiCs:
         else:
             raise ValueError('Aggregation method {0} not supported. Only "mean" or "median".'.format(aggregation))
         
+        np.fill_diagonal(final_distance, 0)
+        
         if clustering_method=='kmeans':
-            embeddings = MDS(final_distance, dim)
+            embeddings = MDS(final_distance, n_clusters)
             label=kmeans(embeddings,
                          k=n_clusters,
                          **kwargs)
