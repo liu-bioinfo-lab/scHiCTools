@@ -22,7 +22,13 @@ A computational toolbox for analyzing single cell Hi-C (high-throughput sequenci
     $ python setup.py install
   ```
 
-  
+  **Install from pipm**
+
+  ```console
+    $ pip install scHiCTools
+  ```
+
+
 
 ### Usage
    **Supported Formats**
