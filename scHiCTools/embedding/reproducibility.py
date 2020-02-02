@@ -1,10 +1,10 @@
 import numpy as np
 from time import time
 from scipy.stats import zscore
-from scipy.spatial.distance import pdist
+import scipy.spatial.distance as dis
 
 
-def pairwise_distances(all_strata, similarity_method, print_time, **kwargs):
+def pairwise_distances(all_strata, similarity_method, print_time, sigma=.5, **kwargs):
     """
     Args:
         all_strata (numpy.array): [n_cells * n_bins, n_cells * (n_bins - 1), ...]
@@ -99,14 +99,15 @@ def pairwise_distances(all_strata, similarity_method, print_time, **kwargs):
                 for j, y in enumerate(all_windows[idx]):
                     if x > y:
                         fingerprints[idx, i * n_windows + j] = 1
-        distance = pdist(fingerprints, 'euclidean')
+        distance = dis.pdist(fingerprints, 'euclidean')
+        distance = dis.squareform(distance)
         similarity = np.exp(- kwargs.pop('sigma', 0.5) * distance)
         distance_mat = np.sqrt(2 - 2 * similarity)
         t2 = time()
-
+        
     else:
         raise ValueError('Method {0} not supported. Only "inner_product", "HiCRep" and "Selfish".'.format(method))
-        
+    
     if print_time:
         print('Time 1:', t1 - t0)
         print('Time 2:', t2 - t1)
