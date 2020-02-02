@@ -177,7 +177,7 @@ class scHiCs:
                                         print_time=print_time, **kwargs)
                 distance_matrices.append(distance_mat)
         distance_matrices = np.array(distance_matrices)
-
+        
         if aggregation == 'mean':
             final_distance = np.mean(distance_matrices, axis=0)
         elif aggregation == 'median':
@@ -204,18 +204,25 @@ class scHiCs:
             raise ValueError('Embedding method {0} not supported. '.format(embedding_method))
 
 
-
-        if return_distance:
-            return embeddings, final_distance
+        if print_time:
+            if return_distance:
+                return embeddings, final_distance, time1, time2
+            else:
+                return embeddings, time1, time2
         else:
-            return embeddings
+            if return_distance:
+                return embeddings, final_distance
+            else:
+                return embeddings
     
     
     def clustering(self,
                    n_clusters,
                    clustering_method,
                    similarity_method,
-                   aggregation='median', n_strata=None,
+                   aggregation='median',
+                   n_strata=None,
+                   print_time=False,
                    **kwargs):
         
         
@@ -228,7 +235,7 @@ class scHiCs:
             print(ch)
             distance_mat = pairwise_distances(new_strata[ch],
                             similarity_method=similarity_method,
-                            print_time=False, **kwargs)
+                            print_time=print_time, **kwargs)
             distance_matrices.append(distance_mat)
         distance_matrices = np.array(distance_matrices)
 
