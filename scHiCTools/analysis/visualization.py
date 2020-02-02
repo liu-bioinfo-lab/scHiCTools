@@ -50,6 +50,7 @@ def scatter(data, dimension="2D", point_size=3, sty='default',
 
         # Plot with label
         if label is not None:
+            label=np.array(label)
             lab=list(set(label))
             for index, l in enumerate(lab):
                 plt.scatter(data[label==l,0], data[label==l,1],
@@ -72,6 +73,7 @@ def scatter(data, dimension="2D", point_size=3, sty='default',
 
         # Plot with label
         if label is not None:
+            label=np.array(label)
             lab=list(set(label))
 
             for index, l in enumerate(lab):
