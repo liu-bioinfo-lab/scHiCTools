@@ -89,7 +89,7 @@ def pairwise_distances(all_strata, similarity_method, print_time, sigma=.5, **kw
         all_windows = np.zeros((n_cells, n_windows))
         for i, stratum in enumerate(all_strata):
             for j in range(n_windows):
-                all_windows[:, j] = np.sum(stratum[:, j * window_size: (j + 1) * window_size - i])
+                all_windows[:, j] += np.sum(stratum[:, j * window_size: (j + 1) * window_size - i])
         t1 = time()
 
         print(' Pairwisely compare the windows...')
@@ -99,6 +99,8 @@ def pairwise_distances(all_strata, similarity_method, print_time, sigma=.5, **kw
                 for j, y in enumerate(all_windows[idx]):
                     if x > y:
                         fingerprints[idx, i * n_windows + j] = 1
+        # print(fingerprints)
+        # print(np.sum(fingerprints, axis=1))
         distance = dis.pdist(fingerprints, 'euclidean')
         distance = dis.squareform(distance)
         similarity = np.exp(- kwargs.pop('sigma', 0.5) * distance)

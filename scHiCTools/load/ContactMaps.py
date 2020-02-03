@@ -168,13 +168,13 @@ class scHiCs:
                 time1=time1+t1
                 time2=time2+t2
                 distance_matrices.append(distance_mat)
-            print('Sum of time 1:',time1)
-            print('Sum of time 2:',time2)
+            print('Sum of time 1:', time1)
+            print('Sum of time 2:', time2)
         else:
             for ch in self.chromosomes:
                 print(ch)
                 distance_mat = pairwise_distances(new_strata[ch], similarity_method=similarity_method,
-                                        print_time=print_time, **kwargs)
+                                                  print_time=print_time, **kwargs)
                 distance_matrices.append(distance_mat)
         distance_matrices = np.array(distance_matrices)
         

@@ -17,9 +17,9 @@ x = scHiCs(['cell_01', 'cell_02', 'cell_03'], reference_genome='mm9', resolution
            operations=['convolution'], kernel_shape=3, keep_n_strata=10, store_full_map=False
            )
 print('Time 0:', time() - t0)
-emb = x.learn_embedding(similarity_method='old_hicrep', embedding_method='MDS', aggregation='median', print_time=True)
+emb, _ = x.learn_embedding(similarity_method='selfish', embedding_method='MDS', aggregation='median', print_time=False, return_distance=True)
 print(emb)
-
+print(_)
 
 
 
