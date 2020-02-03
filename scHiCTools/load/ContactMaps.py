@@ -67,7 +67,7 @@ class scHiCs:
                 for ch in self.chromosomes}
 
         for idx, file in enumerate(list_of_files):
-            print('Processing in file: {0}'.format(file))
+            print('Processing {0} out of {1} files: {2}'.format(idx+1,len(list_of_files),file))
 
             for ch in self.chromosomes:
                 mat, strata = load_HiC(
