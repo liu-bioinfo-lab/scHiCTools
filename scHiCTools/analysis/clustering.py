@@ -69,7 +69,7 @@ def kmeans(data,
 def spectral_clustering(data,
                         data_type='points',
                         n_clusters=4,
-                        normalize=False,
+                        normalize=True,
                         **kwargs):
 
     """
@@ -181,10 +181,12 @@ def HAC(data,
         graph=np.exp(-np.square(data)/np.mean(data**2)) # sigma?
     elif data_type=='points':
         # pair-wise Euclidean distance
-        graph = np.sum(np.square(data), 1)
-        graph = np.add(np.add(-2 * np.dot(data, data.T), graph).T, graph)
+        # graph = np.sum(np.square(data), 1)
+        # graph = np.add(np.add(-2 * np.dot(data, data.T), graph).T, graph)
+        graph = dis.pdist(data)
+        graph = dis.squareform(graph)
         # using fully connected graph with Gaussian similarity function
-        graph = np.exp(-graph/np.mean(graph**2)) # sigma?
+        graph = np.exp(-np.square(graph)/np.mean(graph**2)) # sigma?
     else:
         raise ValueError('data_type is not supported.')
 
