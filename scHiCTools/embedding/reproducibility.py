@@ -4,12 +4,12 @@ from scipy.stats import zscore
 import scipy.spatial.distance as dis
 
 
-def pairwise_distances(all_strata, similarity_method, print_time, sigma=.5, **kwargs):
+def pairwise_distances(all_strata, similarity_method, print_time=False, sigma=.5, **kwargs):
     """
     Args:
         all_strata (numpy.array): [n_cells * n_bins, n_cells * (n_bins - 1), ...]
         similarity_method (str): 'inner_product', 'HiCRep', 'Selfish'
-        n_windows (int): number of windows used in Selfish, default: 20
+        window_size (int): length of every window used in Selfish, default: 10
         sigma (float): value of sigma for the Gaussian kernel used in Selfish, default: 0.5
 
     Return:
@@ -79,26 +79,35 @@ def pairwise_distances(all_strata, similarity_method, print_time, sigma=.5, **kw
 
     elif method == 'selfish':
         n_cells, n_bins = all_strata[0].shape
-        n_strata, n_windows = len(all_strata), kwargs.pop('n_windows', 20)
-        window_size = n_bins // (n_windows + 1) * 2
-        if window_size > n_strata:
-            print('Warning: first {0} strata cannot cover the full region for calculating map similarity.'.format(n_strata),
-                  'Required: {0} strata'.format(window_size),
-                  'Use zeros to fill the missing values.')
+        n_strata = len(all_strata), 
+        # window_size = n_bins // (n_windows + 1) * 2
+        window_size=kwargs.pop('window_size', 10)
+        n_windows=n_bins//window_size
+        
+        # if window_size > n_strata:
+        #     print('Warning: first {0} strata cannot cover the full region for calculating map similarity.'.format(n_strata),
+        #           'Required: {0} strata'.format(window_size),
+        #           'Use zeros to fill the missing values.')
         print(' Calculating summation of sliding windows...')
         all_windows = np.zeros((n_cells, n_windows))
         for i, stratum in enumerate(all_strata):
             for j in range(n_windows):
-                all_windows[:, j] += np.sum(stratum[:, j * window_size: (j + 1) * window_size - i])
+                all_windows[:, j] += np.sum(stratum[:, j * window_size: (j + 1) * window_size - i],axis=1)
         t1 = time()
 
         print(' Pairwisely compare the windows...')
-        fingerprints = np.zeros((n_cells, n_windows * n_windows))
-        for idx in range(n_cells):
-            for i, x in enumerate(all_windows[idx]):
-                for j, y in enumerate(all_windows[idx]):
-                    if x > y:
-                        fingerprints[idx, i * n_windows + j] = 1
+        fingerprints = np.zeros((n_cells, n_windows * (n_windows-1)//2))
+        k=0
+        for i in range(n_windows):
+            for j in range(n_windows-i-1):
+                fingerprints[:,k]=all_windows[:,i]>all_windows[:,j]
+                k+=1
+        
+        # for idx in range(n_cells):
+        #     for i, x in enumerate(all_windows[idx]):
+        #         for j, y in enumerate(all_windows[idx]):
+        #             if x > y:
+        #                 fingerprints[idx, i * n_windows + j] = 1
         # print(fingerprints)
         # print(np.sum(fingerprints, axis=1))
         distance = dis.pdist(fingerprints, 'euclidean')
