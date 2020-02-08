@@ -1,8 +1,9 @@
+
 import numpy as np
 from copy import deepcopy
 from scipy.sparse import coo_matrix
 from .load_hic_file import get_chromosome_lengths, load_HiC
-from ..embedding import pairwise_distances, MDS, tSNE, UMAP, PHATE, SpectralEmbedding
+from ..embedding import pairwise_distances, MDS, tSNE, UMAP, PHATE, SpectralEmbedding, PCA
 from .processing_utils import matrix_operation
 from ..analysis import scatter
 from ..analysis import kmeans, spectral_clustering, HAC
@@ -78,6 +79,7 @@ class scHiCs:
                     keep_n_strata=keep_n_strata, operations=operations, **kwargs)
                 if store_full_map:
                     self.full_maps[ch][idx] = mat
+                
                 if keep_n_strata:
                     # self.strata[ch][idx] = strata
                     for strata_idx, stratum in enumerate(strata):
@@ -130,6 +132,36 @@ class scHiCs:
                 for i, mat in enumerate(self.full_maps[ch]):
                     for j in range(self.keep_n_strata):
                         self.strata[ch][j][i, :] = np.diag(mat[j:, :len(mat) - j])
+    
+    
+    
+    
+    def scHiCluster(self,dim=2,cutoff=0.8,n_PCs=10,k=4,**kwargs):
+        
+        if self.full_maps is None:
+            raise ValueError('No full maps stored. scHiCluster is not doable.')
+        
+        X=None
+        for ch in self.chromosomes:
+            A=self.full_maps[ch]
+            n=A.shape[1]*A.shape[2]
+            A.shape=(A.shape[0],n)
+            A=np.quantile(A,cutoff,axis=1)<np.transpose(A)
+            A = PCA(A.T,n_PCs)
+            if X is None:
+                X=A
+            else:
+                X=np.append(X, A, axis=1)
+        
+        X=PCA(X,n_PCs)
+        label=kmeans(X,k=k,**kwargs)
+        
+        return X[:,:dim], label
+
+
+
+
+
 
     def learn_embedding(self, similarity_method, embedding_method,
                         dim=2, aggregation='median', n_strata=None, return_distance=False, print_time=False,
