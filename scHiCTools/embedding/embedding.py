@@ -7,6 +7,16 @@ import scipy.spatial.distance as dis
 from scipy.optimize import curve_fit
 
 
+# PCA :---------------------------------------------------
+
+def PCA(X, dim=2):
+    X=X-np.mean(X,axis=0)
+    U, S, V = np.linalg.svd(X, full_matrices=False, compute_uv=True)
+    X = np.dot(V[:dim,:],X.T)
+    return(X.T)
+    
+
+
 
 # MDS :---------------------------------------------------
 
@@ -32,7 +42,7 @@ def Hbeta(D, beta=1.0):
     """
     # Compute P-row and corresponding perplexity
     P = np.exp(-D.copy() * beta)
-    sumP = sum(P)
+    sumP = sum(P)+10**-10
     H = np.log(sumP) + beta * np.sum(D * P) / sumP
     P = P / sumP
     return H, P
@@ -169,7 +179,8 @@ def tSNE(mat,
             P = P / 4.
         if np.sum(abs(iY))<.001:
             break
-
+        
+    Y=Y/np.std(Y)
     return Y
 
 
@@ -468,7 +479,9 @@ def PHATE(mat, dim=2, k=5, a=1, gamma=1, t_max=100):
 
     # apply classical MDS to Dt
     Y=MDS(Dt,dim)
-
+    
+    
+    
     # apply metric MDS to Dt with Y as an initialization
     Y=MMDS(Dt,Y,dim)
 
