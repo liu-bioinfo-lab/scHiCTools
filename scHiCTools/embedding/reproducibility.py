@@ -68,7 +68,7 @@ def pairwise_distances(all_strata, similarity_method, print_time=False, sigma=.5
                     weights.append(len(s1) * np.std(s1) * np.std(s2))
                     corrs.append(np.corrcoef(s1, s2)[0, 1])
                 corrs=np.nan_to_num(corrs)
-                s = np.inner(corrs, weights) / np.sum(weights)
+                s = np.inner(corrs, weights) / (np.sum(weights)+10**10)
                 similarity[i, j] = s
                 similarity[j, i] = s
         t1 = time()
