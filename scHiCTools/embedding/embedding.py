@@ -24,6 +24,8 @@ def MDS(mat, n=2):
     # mat = np.sqrt(2 - 2 * mat)
     h = np.eye(len(mat)) - np.ones(mat.shape) / len(mat)
     k = -0.5 * h.dot(mat * mat).dot(h)
+    if np.any(np.isnan(k)):
+        k[np.isnan(k)] = 0
     w, v = np.linalg.eig(k)
     max_ = np.argsort(w)[:-n - 1:-1]
     co = np.real(v[:, max_].dot(np.sqrt(np.diag(w[max_]))))
