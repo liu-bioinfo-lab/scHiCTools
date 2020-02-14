@@ -63,12 +63,16 @@ def pairwise_distances(all_strata, similarity_method, print_time=False, sigma=.5
                 corrs, weights = [], []
                 for stratum in all_strata:
                     s1, s2 = stratum[i, :], stratum[j, :]
-                    zero_pos = [k for k in range(len(s1)) if s1[k] == 0 and s2[k] == 0]
-                    s1, s2 = np.delete(s1, zero_pos), np.delete(s2, zero_pos)
-                    weights.append(len(s1) * np.std(s1) * np.std(s2))
-                    corrs.append(np.corrcoef(s1, s2)[0, 1])
+                    if all(s1==0) or all(s2==0):
+                        weights.append(0)
+                        corrs.append(0)
+                    else:
+                        zero_pos = [k for k in range(len(s1)) if s1[k] == 0 and s2[k] == 0]
+                        s1, s2 = np.delete(s1, zero_pos), np.delete(s2, zero_pos)
+                        weights.append(len(s1) * np.std(s1) * np.std(s2))
+                        corrs.append(np.corrcoef(s1, s2)[0, 1])
                 corrs=np.nan_to_num(corrs)
-                s = np.inner(corrs, weights) / (np.sum(weights)+10**10)
+                s = np.inner(corrs, weights) / (np.sum(weights))
                 similarity[i, j] = s
                 similarity[j, i] = s
         t1 = time()
