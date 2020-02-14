@@ -56,6 +56,7 @@ def pairwise_distances(all_strata, similarity_method, print_time=False, sigma=.5
         t2 = time()
 
     elif method == 'old_hicrep':
+        print('new')
         n_cells, n_bins = all_strata[0].shape
         similarity = np.ones((n_cells, n_cells))
         for i in range(n_cells):
