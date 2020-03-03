@@ -144,8 +144,9 @@ class scHiCs:
         X=None
         for ch in self.chromosomes:
             A=self.full_maps[ch]
-            n=A.shape[1]*A.shape[2]
-            A.shape=(A.shape[0],n)
+            if len(A.shape)==3:
+                n=A.shape[1]*A.shape[2]
+                A.shape=(A.shape[0],n)
             A=np.quantile(A,cutoff,axis=1)<np.transpose(A)
             A = PCA(A.T,n_PCs)
             if X is None:
