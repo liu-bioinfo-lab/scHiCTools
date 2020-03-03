@@ -73,40 +73,43 @@ def readHeader(req, chr1, chr2, posilist):
     if (version < 6):
         print("Version {0} no longer supported".format(str(version)))
         return -1
-    print('HiC version:', version)
+    # print('HiC version:', version)
 
     master = struct.unpack('<q', req.read(8))[0]
-    print('Master: ', master)
+    # print('Master: ', master)
 
     genome = b""
     c = req.read(1)
     while (c != b'\0'):
         genome += c
         c = req.read(1)
-    print('Genome: ', genome.decode('utf-8'))
+    # print('Genome: ', genome.decode('utf-8'))
 
     # read and throw away attribute dictionary (stats+graphs)
     nattributes = struct.unpack('<i', req.read(4))[0]
     for x in range(nattributes):
         key = __readcstr(req)
-        print('Attributes:', key, ': ', end='')
+        # print('Attributes:', key, ': ', end='')
         value = __readcstr(req)
-        print(value)
+        # print(value)
     nChrs = struct.unpack('<i', req.read(4))[0]
     found1 = False
     found2 = False
     for i in range(0, nChrs):
       name = __readcstr(req)
+      if not name.startswith('chr'):
+          name = 'chr' + name
       length = struct.unpack('<i', req.read(4))[0]
-      print(name, ': ', length)
 
       if name == chr1:
+          print(name, ': ', length)
           found1 = True
           chr1ind = i
           if (posilist[0] == -100):
               posilist[0] = 0
               posilist[1] = length
       if name == chr2:
+          print(name, ': ', length)
           found2 = True
           chr2ind = i
           if (posilist[2] == -100):
@@ -239,7 +242,7 @@ def readMatrixZoomData(req, myunit, mybinsize):
     blockColumnCount = struct.unpack('<i', req.read(4))[0]
     #print('MatrixZoom: ', blockColumnCount)
     storeBlockData = False
-    print(unit, binSize)
+    # print(unit, binSize)
 
     #for the initial
     myBlockBinCount = -1
@@ -514,6 +517,8 @@ def straw(norm, infile, chr1loc, chr2loc, unit, binsize, is_synapse=False):
         c2pos2 = chr2_arra[2]
 
     list1 = readHeader(req, chr1, chr2, [c1pos1, c1pos2, c2pos1, c2pos2])
+    # print(chr1loc, chr2loc)
+    # print(req, chr1, chr2, [c1pos1, c1pos2, c2pos1, c2pos2])
     # print(list1)
 
     master = list1[0]
@@ -604,7 +609,7 @@ def straw(norm, infile, chr1loc, chr2loc, unit, binsize, is_synapse=False):
     else:
         req.seek(myFilePos)
         list1 = readMatrix(req, unit, binsize)
-        print(list1)
+        # print(list1)
 
     blockBinCount = list1[0]
     blockColumnCount = list1[1]
