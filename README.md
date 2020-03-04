@@ -11,6 +11,11 @@ A computational toolbox for analyzing single cell Hi-C (high-throughput sequenci
   - Python (version >= 3.6)
   - numpy (version >= 1.15.4)
   - scipy (version >= 1.0)
+  - matplotlib (version >=3.1.1)
+  - pandas (version >=0.19)
+  - simplejson
+  - six
+  - h5py
 
   **Install from GitHub**
 
