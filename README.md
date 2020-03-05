@@ -4,7 +4,7 @@
 A computational toolbox for analyzing single cell Hi-C (high-throughput sequencing for 3C) data which includes functions for:
 1. Load single-cell HiC datasets
 2. Smoothing the contact maps with linear convolution, random walk or network enhancing
-3. Calculating embeddings for single cell HiC datasets efficiently with reproducibility measures include InnerProduct, fastHiCRep and Selfish
+3. Calculating embeddings for single cell HiC datasets efficiently with reproducibility measures include InnerProduct, HiCRep and Selfish
 
 ### Installation
   **Required Python Packages**
@@ -128,7 +128,7 @@ A computational toolbox for analyzing single cell Hi-C (high-throughput sequenci
   you are going to use with a Python dict. e.g. {'chr1': 150000000, 'chr2': 130000000, 'chr3': 200000000}
   - resolution (int): the resolution to separate genome into bins.
   If using .hic file format, the given resolution must match with the resolutions in .hic file.
-  - keep_n_strata (None or int): only store contacts within n strata near the diagonal. Default: None.
+  - keep_n_strata (None or int): only store contacts within n strata near the diagonal. Default: 10.
   If 'None', it will not store strata
   - store_full_map (bool): whether store full contact maps in numpy matrices or
   scipy sparse matrices，If False, it will save memory.
@@ -201,14 +201,14 @@ A computational toolbox for analyzing single cell Hi-C (high-throughput sequenci
 
   **Learn Embeddings**
   ```console
-  >>>embs = loaded_data.learn embedding(
+  >>>embs = loaded_data.learn_embedding(
   ... dim=2, similarity_method='inner_product', embedding_method='MDS',
   ... n_strata=None, aggregation='median', return_distance=False
   ... )
   ```
-  This function will return the embeddings in the format of a numpy array with shape (#_of_cells, #_of_dimensions).
+  This function will return the embeddings in the format of a numpy array with shape ( # of cells, # of dimensions).
   - dim (int): the dimension for the embedding
-  - similarity_method (str): reproducibility measure, 'InnerProduct', 'fastHiCRep' or
+  - similarity_method (str): reproducibility measure, 'InnerProduct', 'HiCRep' or
   'Selfish'. Default: 'InnerProduct'
   - embedding_method (str): 'MDS', 'tSNE' or 'UMAP'
   - n_strata (int): only consider contacts within this genomic distance. Default: None.
@@ -221,6 +221,89 @@ A computational toolbox for analyzing single cell Hi-C (high-throughput sequenci
   - Some additional argument for Selfish:
     - n_windows (int): split contact map into n windows, default: 10
     - sigma (float): sigma in the Gaussian-like kernel: default: 1.6
+
+
+
+  **Clustering**
+
+  There are two functions to cluster cells.
+
+  ```console
+  >>>label=loaded_data.clustering(
+  ... n_clusters=4, clustering_method='kmeans', similarity_method='innerproduct',
+  ... aggregation='median', n_strata=None
+  ... )
+  ```
+
+  `clustering` function returns a numpy array of cell labels clustered.
+
+  - n_clusters (int): Number of clusters.
+
+  - clustering_method (str):
+    Clustering method in 'kmeans', 'spectral_clustering' or 'HAC'(hierarchical agglomerative clustering).
+
+  - similarity_method (str):
+    Reproducibility measure.
+    Value in ‘InnerProduct’, ‘HiCRep’ or ‘Selfish’.
+
+  - aggregation (str):
+    Method to aggregate different chromosomes.
+    Value is either 'mean' or 'median'.
+    Default: 'median'.
+
+  - n_strata (int or None):
+    Only consider contacts within this genomic distance.
+    If it is None, it will use the all strata kept (the argument keep_n_strata) from previous loading process. Default: None.
+
+  - print_time (bool):
+    Whether to print the processing time. Default: False.
+
+
+  ```console
+  >>>hicluster=loaded_data.scHiCluster(dim=2,cutoff=0.8,n_PCs=10,k=4)
+  ```
+
+  `scHiCluster` function returns two componments.
+  First componment is a numpy array of embedding of cells using HiCluster.
+  Second componment is a numpy of cell labels clustered by HiCluster.
+
+  - dim (int): Number of dimension of embedding. Default: 2.
+
+  - cutoff (float): The cutoff proportion to convert the real contact matrix into binary matrix. Default: 0.8.
+
+  - n_PCs (int): Number of principal components. Default: 10.
+
+  - k (int): Number of clusters. Default: 4.
+
+
+  **Visualization**
+
+  ```console
+  >>>scatter(data, dimension="2D", point_size=3, sty='default',
+  ... label=None, title=None, alpha=None, aes_label=None
+  ... )
+  ```
+
+  This function is to plot scatter plot of embedding points of single cell data.
+    Scatter plot of either two-dimensions or three-dimensions will be generated.
+
+  - data (numpy.array): A numpy array which has 2 or 3 columns, every row represent a point.
+
+  - dimension (str): Specifiy the dimension of the plot, either "2D" or "3D". Default: "2D".
+
+  - point_size (float): Set the size of the points in scatter plot. Default: 3.
+
+  - sty (str): Styles of Matplotlib. Default: 'default'.
+
+  - label (list or None): specifiy the label of each point. Default: None.
+
+  - title (str): Title of the plot. Default: None.
+
+  - alpha (float): The alpha blending value. Default: None.
+
+  - aes_label (list): Set the label of every axis. Default: None.
+
+
 
 ### Citation
 Fan Feng, and Jie Liu. "scHiCTools: a computational toolbox for analyzing single cell Hi-C data."
