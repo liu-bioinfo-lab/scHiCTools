@@ -23,13 +23,32 @@ def scatter(data, dimension="2D", point_size=3, sty='default',
     """
     This function is to plot scatter plot of embedding points
         of single cell data.
+    
+    Parameters
+    ----------
+    data : numpy.array
+        A numpy array which has 2 or 3 columns, every row represent a point.
+    dimension : str, optional
+        Specifiy the dimension of the plot, either "2D" or "3D".
+        The default is "2D".
+    point_size : float, optional
+        Set the size of the points in scatter plot.
+        The default is 3.
+    sty : str, optional
+        Styles of Matplotlib. The default is 'default'.
+    label : list or None, optional
+        Specifiy the label of each point. The default is None.
+    title : str, optional
+        Title of the plot. The default is None.
+    alpha : float, optional
+        The alpha blending value. The default is None.
+    aes_label : list, optional
+        Set the label of every axis. The default is None.
+    **kwargs :
+        Other arguments passed to the function.
 
-    inputs:
-        data: a numpy array which has 2 or 3 columns, every row represent a point.
-        dimension: specifiy the dimension of the plot, either "2D" or "3D".
-        label: specifiy the label of each point.
-
-    outputs:
+    Output
+    -------
         Scatter plot of either 2D or 3D.
 
     """
