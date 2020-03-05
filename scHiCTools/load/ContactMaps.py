@@ -10,7 +10,7 @@ from ..analysis import kmeans, spectral_clustering, HAC
 
 
 class scHiCs:
-    def __init__(self, list_of_files, reference_genome, resolution, sparse=False,
+    def __init__(self, list_of_files, reference_genome, resolution, sparse=False, chromosomes='all',
                  format='customized', keep_n_strata=0, store_full_map=False,
                  operations=None, **kwargs):
         """
@@ -41,7 +41,7 @@ class scHiCs:
             You can check docstrings for pre-processing and smoothing for more information.
         """
         self.resolution = resolution
-        self.chromosomes, self.chromosome_lengths = get_chromosome_lengths(reference_genome, resolution, **kwargs)
+        self.chromosomes, self.chromosome_lengths = get_chromosome_lengths(reference_genome, chromosomes, resolution, **kwargs)
         self.num_of_cells = len(list_of_files)
         self.sparse = sparse
         self.keep_n_strata = keep_n_strata
@@ -71,6 +71,8 @@ class scHiCs:
             print('Processing {0} out of {1} files: {2}'.format(idx+1,len(list_of_files),file))
 
             for ch in self.chromosomes:
+                if ('ch' in ch) and ('chr' not in ch):
+                    ch=ch.replace("ch", "chr")
                 mat, strata = load_HiC(
                     file, genome_length=self.chromosome_lengths, format=format,
                     custom_format=custom_format, header=header,
@@ -137,6 +139,30 @@ class scHiCs:
     
     
     def scHiCluster(self,dim=2,cutoff=0.8,n_PCs=10,k=4,**kwargs):
+        
+        """
+        Parameters
+        ----------
+        dim : int, optional
+            Number of dimension of embedding. The default is 2.
+        cutoff : float, optional
+            The cutoff proportion to convert the real contact
+            matrix into binary matrix. The default is 0.8.
+        n_PCs : int, optional
+            Number of principal components. The default is 10.
+        k : int, optional
+            Number of clusters. The default is 4.
+        **kwargs :
+            Other arguments passed to function.
+
+        Returns
+        -------
+        List of 2 componments:
+            embedding : numpy.array
+                Embedding of cells using HiCluster.
+            label : numpy.array
+                A array of cell labels clustered by HiCluster.
+        """
         
         if self.full_maps is None:
             raise ValueError('No full maps stored. scHiCluster is not doable.')
@@ -257,8 +283,35 @@ class scHiCs:
                    n_strata=None,
                    print_time=False,
                    **kwargs):
-        
-        
+        """
+        Parameters
+        ----------
+        n_clusters : int
+            Number of clusters.
+        clustering_method : str
+            Clustering method in 'kmeans', 'spectral_clustering' or 'HAC'(hierarchical agglomerative clustering).
+        similarity_method : str
+            Reproducibility measure.
+            Value in ‘InnerProduct’, ‘HiCRep’ or ‘Selfish’.
+        aggregation : str, optional
+             Method to aggregate different chromosomes. 
+             Value is either 'mean' or 'median'. 
+             The default is 'median'.
+        n_strata : int or None, optional
+            Only consider contacts within this genomic distance.
+            If it is None, it will use the all strata kept from previous loading process.
+            The default is None.
+        print_time : bool, optional
+            Whether to print the processing time. The default is False.
+        **kwargs :
+            Other arguments passed to function.
+
+        Returns
+        -------
+        label : numpy.array
+            An array of cell labels clustered.
+        """
+                
         distance_matrices = []
         assert n_strata is not None or self.keep_n_strata is not None
         n_strata = n_strata if n_strata is not None else self.keep_n_strata
