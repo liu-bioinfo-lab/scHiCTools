@@ -14,7 +14,7 @@ from .processing_utils import matrix_operation
 my_path = os.path.abspath(os.path.dirname(__file__))
 
 
-def get_chromosome_lengths(ref, res=1, **kwargs):
+def get_chromosome_lengths(ref, chromosomes, res=1, **kwargs):
     """
     Get lengths for all chromosomes in a given resolution according to the reference genome.
 
@@ -50,17 +50,17 @@ def get_chromosome_lengths(ref, res=1, **kwargs):
     else:
         raise ValueError('Unsupported reference genome!')
 
-    if kwargs['chromosomes'] in ['all', 'All']:
+    if chromosomes in ['all', 'All']:
         pass
-    elif kwargs['chromosomes'] == 'expect X':
+    elif chromosomes == 'expect X':
         del lengths['chrX']
-    elif kwargs['chromosomes'] == 'except Y':
+    elif chromosomes == 'except Y':
         del lengths['chrY']
-    elif kwargs['chromosomes'] == 'except XY':
+    elif chromosomes == 'except XY':
         del lengths['chrX']
         del lengths['chrY']
-    elif type(kwargs['chromosomes']) == list:
-        lengths = {elm: lengths[elm] for elm in kwargs['chromosomes']}
+    elif type(chromosomes) == list:
+        lengths = {elm: lengths[elm] for elm in chromosomes}
 
     chromosomes = set(lengths.keys())
     return chromosomes, lengths
