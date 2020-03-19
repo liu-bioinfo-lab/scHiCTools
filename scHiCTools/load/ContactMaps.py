@@ -138,7 +138,7 @@ class scHiCs:
     
     
     
-    def scHiCluster(self,dim=2,cutoff=0.8,n_PCs=10,k=4,**kwargs):
+    def scHiCluster(self,dim=2,cutoff=0.8,n_PCs=10,n_clusters=4,**kwargs):
         
         """
         Parameters
@@ -181,7 +181,7 @@ class scHiCs:
                 X=np.append(X, A, axis=1)
         
         X=PCA(X,n_PCs)
-        label=kmeans(X,k=k,**kwargs)
+        label=kmeans(X,k=n_clusters,**kwargs)
         
         return X[:,:dim], label
 
