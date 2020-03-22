@@ -12,14 +12,14 @@ sys.path.insert(0, os.path.abspath(
 
 from embedding import PCA, MDS, tSNE, SpectralEmbedding, UMAP, PHATE
 
-random_generate_data = np.random.normal(size=(60,5))
-dist_mat = distance.squareform(distance.pdist(random_generate_data))
+rand_data = np.random.normal(size=(60,5))
+dist_mat = distance.squareform(distance.pdist(rand_data))
 dim=np.random.randint(1,5)
 
 def test_PCA():
-    emb = PCA(random_generate_data, dim=dim)
+    emb = PCA(rand_data, dim=dim)
     assert len(emb[0])==dim
-    assert len(emb)==len(random_generate_data)
+    assert len(emb)==len(rand_data)
     assert not np.any(np.isnan(emb))
     assert not np.any(np.isinf(emb))
     
