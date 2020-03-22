@@ -13,10 +13,10 @@ from scHiCTools import kmeans, spectral_clustering, HAC
 
 
 center=np.array([[0,0],[20,20],[-20,20]])
-random_generate_data = np.random.normal(size=(30,2)) + np.repeat(center, 10, axis=0)
+rand_data = np.random.normal(size=(30,2)) + np.repeat(center, 10, axis=0)
 
 def test_kmeans():
-    label=kmeans(random_generate_data, k=3)
+    label=kmeans(rand_data, k=3)
     l1 = np.equal(label[:10], label[0]).all()
     l2 = np.equal(label[10:-10], label[10]).all()
     l3 = np.equal(label[-10:], label[-10]).all()
@@ -26,7 +26,7 @@ def test_kmeans():
 
 
 def test_SC():
-    label=spectral_clustering(random_generate_data, n_clusters=3)
+    label=spectral_clustering(rand_data, n_clusters=3)
     l1 = np.equal(label[:10], label[0]).all()
     l2 = np.equal(label[10:-10], label[10]).all()
     l3 = np.equal(label[-10:], label[-10]).all()
@@ -35,7 +35,7 @@ def test_SC():
     assert l3
     
 def test_HAC():
-    label=HAC(random_generate_data, n_clusters=3)
+    label=HAC(rand_data, n_clusters=3)
     l1 = np.equal(label[:10], label[0]).all()
     l2 = np.equal(label[10:-10], label[10]).all()
     l3 = np.equal(label[-10:], label[-10]).all()
