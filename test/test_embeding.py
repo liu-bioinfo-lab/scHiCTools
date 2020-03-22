@@ -17,7 +17,7 @@ dist_mat = distance.squareform(distance.pdist(rand_data))
 dim=np.random.randint(1,5)
 
 def test_PCA():
-    emb = PCA(rand_data, dim=dim)
+    emb = PCA(rand_data, dim=2)
     assert len(emb[0])==dim
     assert len(emb)==len(rand_data)
     assert not np.any(np.isnan(emb))
