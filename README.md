@@ -282,6 +282,7 @@ A computational toolbox for analyzing single cell Hi-C (high-throughput sequenci
   >>>scatter(data, dimension="2D", point_size=3, sty='default',
   ... label=None, title=None, alpha=None, aes_label=None
   ... )
+  >>>plt.show()
   ```
 
   This function is to plot scatter plot of embedding points of single cell data.
@@ -306,7 +307,7 @@ A computational toolbox for analyzing single cell Hi-C (high-throughput sequenci
 
 
 ### Citation
-Fan Feng, and Jie Liu. "scHiCTools: a computational toolbox for analyzing single cell Hi-C data."
+Xinjun Li, Fan Feng, Wai Yan Leung and Jie Liu. "scHiCTools: a computational toolbox for analyzing single cell Hi-C data."
 bioRxiv (2019): 769513.
 
 ### References
