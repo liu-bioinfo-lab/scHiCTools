@@ -145,7 +145,7 @@ def tSNE(mat,
     P = x2p(mat, 1e-5, perp)
     P = P + np.transpose(P)
     P = P / np.sum(P)
-    P = P * 4.									# early exaggeration
+    P = P * 4.			# early exaggeration
     P = np.maximum(P, 1e-12)
 
     # Run iterations
@@ -364,7 +364,6 @@ def MMDS(dist_mat,
         Initial embedding.
     momentum : float
         Dimension of the embedding space. The default is 2.
-
 
     Returns
     -------
