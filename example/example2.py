@@ -1,23 +1,33 @@
 import sys
+import os
 sys.path.insert(0, './')
-print(sys.path)
 import numpy as np
 from scHiCTools import scHiCs
 from scHiCTools import scatter
 import matplotlib.pyplot as plt
-import os
 
 
-os.chdir("D:/学习/密歇根/Liu LAB/scHiCTools/example") # set your current directory
+sys.path.insert(0, os.path.abspath(
+    os.path.join(os.path.dirname(__file__), '..')))
+
+
 files=os.listdir(os.getcwd()+'/1CDX_cells')
 for i in range(len(files)):
     files[i]='1CDX_cells/'+files[i]+'/new_adj'
 files=np.random.choice(files, size=20, replace=False)
 
 
-x = scHiCs(files, reference_genome='mm9', resolution=500000, max_distance=4000000,
-            format='shortest_score', resolution_adjust=True, chromosomes='except Y',
-            operations=['convolution'], kernel_shape=3, keep_n_strata=10, store_full_map=True)
+x = scHiCs(files,
+           reference_genome='mm9',
+           resolution=500000,
+           max_distance=4000000,
+           format='shortest_score',
+           resolution_adjust=True,
+           chromosomes='except Y',
+           operations=['convolution'],
+           kernel_shape=3,
+           keep_n_strata=10,
+           store_full_map=True)
 
 
 
