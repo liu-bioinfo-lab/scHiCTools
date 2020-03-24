@@ -80,7 +80,8 @@ def spectral_clustering(data,
         data: a numpy array,
             can either be a matrix which every row represent a point
             or a distance matrix.
-        data_type: specify the type of data input. Must be in either 'points' or 'distance_matrix'.
+        data_type: specify the type of data input. 
+                    Must be in either 'points' or 'distance_matrix'.
         n_clusters: number of clusters.
         normalize: Whether to use unnormalized or normalized spectral clustering.
     Output:
