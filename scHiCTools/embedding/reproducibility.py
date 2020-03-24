@@ -4,7 +4,8 @@ from scipy.stats import zscore
 import scipy.spatial.distance as dis
 
 
-def pairwise_distances(all_strata, similarity_method, print_time=False, sigma=.5, **kwargs):
+def pairwise_distances(all_strata, similarity_method,
+                       print_time=False, sigma=.5, **kwargs):
     """
     Args:
         all_strata (numpy.array): [n_cells * n_bins, n_cells * (n_bins - 1), ...]
