@@ -243,7 +243,7 @@ def readMatrixZoomData(req, myunit, mybinsize):
     #print('MatrixZoom: ', blockColumnCount)
     storeBlockData = False
     # print(unit, binSize)
-
+    
     #for the initial
     myBlockBinCount = -1
     myBlockColumnCount = -1
@@ -265,7 +265,8 @@ def readMatrixZoomData(req, myunit, mybinsize):
 
         if storeBlockData:
             blockMap[blockNumber] = entry
-    return [storeBlockData, myBlockBinCount, myBlockColumnCount]
+    return [storeBlockData, myBlockBinCount, myBlockColumnCount, binSize]
+    #  , binSize ?
 
 
 def readMatrix(req, unit, binsize):
@@ -294,18 +295,19 @@ def readMatrix(req, unit, binsize):
     blockBinCount = -1
     blockColumnCount = -1
 
+    res = []
     while i < nRes and (not found):
         list1 = readMatrixZoomData(req, unit, binsize)
         found = list1[0]
+        if not found:
+            res.append(list1[3])
         if list1[1] != -1 and list1[2] != -1:
             blockBinCount = list1[1]
             blockColumnCount = list1[2]
         i = i+1
     if not found:
-        print("Error finding block data\n")
-        return -1
+        raise ValueError('Error finding block data. Resolution should be in: {}'.format(res))
     return [blockBinCount, blockColumnCount]
-
 
 def getBlockNumbersForRegionFromBinPosition(regionIndices, blockBinCount, blockColumnCount, intra):
     """ Gets the block numbers we will need for a specific region; used when
@@ -610,7 +612,6 @@ def straw(norm, infile, chr1loc, chr2loc, unit, binsize, is_synapse=False):
         req.seek(myFilePos)
         list1 = readMatrix(req, unit, binsize)
         # print(list1)
-
     blockBinCount = list1[0]
     blockColumnCount = list1[1]
     blockNumbers = getBlockNumbersForRegionFromBinPosition(regionIndices, blockBinCount, blockColumnCount, c1 == c2)
