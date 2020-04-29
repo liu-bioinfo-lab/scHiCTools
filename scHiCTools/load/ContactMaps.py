@@ -1,5 +1,6 @@
 
 import numpy as np
+import pandas as pd
 from copy import deepcopy
 from scipy.sparse import coo_matrix
 from .load_hic_file import get_chromosome_lengths, load_HiC
@@ -7,6 +8,7 @@ from ..embedding import pairwise_distances, MDS, tSNE, UMAP, PHATE, SpectralEmbe
 from .processing_utils import matrix_operation
 from ..analysis import scatter
 from ..analysis import kmeans, spectral_clustering, HAC
+import matplotlib.pyplot as plt
 
 
 class scHiCs:
@@ -45,6 +47,11 @@ class scHiCs:
         self.num_of_cells = len(list_of_files)
         self.sparse = sparse
         self.keep_n_strata = keep_n_strata
+        self.contacts=np.array([0]*len(list_of_files))
+        self.short_range=np.array([0]*len(list_of_files))
+        self.mitotic=np.array([0]*len(list_of_files))
+        self.files=list_of_files
+        
 
         res_adjust = kwargs.pop('resolution_adjust', True)
         header = kwargs.pop('header', 0)
@@ -79,6 +86,16 @@ class scHiCs:
                     chromosome=ch, resolution=resolution, resolution_adjust=res_adjust,
                     map_filter=map_filter, sparse=sparse, gzip=gzip,
                     keep_n_strata=keep_n_strata, operations=operations, **kwargs)
+                
+                self.contacts[idx]+=np.sum(mat)/2+ np.trace(mat)/2
+                
+                self.short_range[idx]+=sum([np.sum(mat[i,i:i+int(2000000/self.resolution)]) for i in range(len(mat))])
+                self.mitotic[idx]+=sum([np.sum(mat[i,i+int(2000000/self.resolution):i+int(12000000/self.resolution)]) for i in range(len(mat))])
+                
+                
+                    
+                    
+                
                 if store_full_map:
                     self.full_maps[ch][idx] = mat
                 
@@ -134,7 +151,29 @@ class scHiCs:
                 for i, mat in enumerate(self.full_maps[ch]):
                     for j in range(self.keep_n_strata):
                         self.strata[ch][j][i, :] = np.diag(mat[j:, :len(mat) - j])
+                        
     
+    def plot_contacts(self, **kwargs):
+        
+        plt.subplot(1,2,1)
+        
+        plt.hist(self.contacts, **kwargs)
+        plt.xlabel("Number of contacts")
+        plt.ylabel('Frequency')
+        plt.title('Histogram of contacts')
+        
+        plt.subplot(1,2,2)
+        
+        plt.scatter(self.mitotic*100/self.contacts,self.short_range*100/self.contacts, **kwargs)
+        plt.xlabel("% Mitotic contacts")
+        plt.ylabel("% Short-range contacts")
+        plt.title('Histogram of contacts')
+        
+     
+    def select_cells(self, min_n_contacts=0,max_short_range_contact=1):
+        files=np.array(self.files)
+        f=files[np.logical_and(self.short_range/self.contacts<=max_short_range_contact,self.contacts>=min_n_contacts)]
+        return list(f)
     
     
     
