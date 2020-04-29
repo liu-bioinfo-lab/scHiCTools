@@ -160,14 +160,30 @@ A computational toolbox for analyzing single cell Hi-C (high-throughput sequenci
   (introduced in next sub-section).
 
   You can also skip pre-processing and smoothing in loading step (operations=None),
-  and do them in next lines:
+  and do them in next lines.
+
+  **Plot number of contacts and select cells**
+
+  You can plot the number of contacts of your cells.
+  ```console
+  >>>loaded_data.plot_contacts(hist=True, percent=True)
+  ```
+  If hist is `True`, plot Histogram of the number of contacts. If percent is `True`, plot the scatter plot of percentage cells with short-range contacts (< 2 Mb) versus contacts at the mitotic band (2-12 Mb).
+
+  You can select cells based on number of contacts:
+  ```console
+  >>>loaded_data.select_cells(min_n_contacts=10000,max_short_range_contact=0.99)
+  ```
+  The above command select cells have number of contacts bigger than 10000 and percent of short range contacts small than .99.
+
+  **Pre-processing and Smoothing Operations**
+  Stand alone pre-processing and smoothing:
   ```console
   >>>loaded_data.processing(['random_walk', 'network_enhancing'])
   ```
-  But if you didn't store full map (i.e. store_full_map=False), processing is not
+  If you didn't store full map (i.e. store_full_map=False), processing is not
   doable in a separate step.
 
-  **Pre-processing and Smoothing Operations**
   - logarithm:
   new_W_ij = log_(base) (W_ij + epsilon). Additional arguments:
     - log_base: default: e
