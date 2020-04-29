@@ -153,21 +153,23 @@ class scHiCs:
                         self.strata[ch][j][i, :] = np.diag(mat[j:, :len(mat) - j])
                         
     
-    def plot_contacts(self, **kwargs):
+    def plot_contacts(self, hist=TRUE, percent=TRUE, **kwargs):
         
-        plt.subplot(1,2,1)
+        if hist:
+            plt.subplot(1,2,1)
         
-        plt.hist(self.contacts, **kwargs)
-        plt.xlabel("Number of contacts")
-        plt.ylabel('Frequency')
-        plt.title('Histogram of contacts')
+            plt.hist(self.contacts, **kwargs)
+            plt.xlabel("Number of contacts")
+            plt.ylabel('Frequency')
+            plt.title('Histogram of contacts')
         
-        plt.subplot(1,2,2)
+        if percent:
+            plt.subplot(1,2,2)
         
-        plt.scatter(self.mitotic*100/self.contacts,self.short_range*100/self.contacts, **kwargs)
-        plt.xlabel("% Mitotic contacts")
-        plt.ylabel("% Short-range contacts")
-        plt.title('Histogram of contacts')
+            plt.scatter(self.mitotic*100/self.contacts,self.short_range*100/self.contacts, **kwargs)
+            plt.xlabel("% Mitotic contacts")
+            plt.ylabel("% Short-range contacts")
+            plt.title('Histogram of contacts')
         
      
     def select_cells(self, min_n_contacts=0,max_short_range_contact=1):
