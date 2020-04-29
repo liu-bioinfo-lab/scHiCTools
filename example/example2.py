@@ -17,18 +17,29 @@ for i in range(len(files)):
 files=np.random.choice(files, size=20, replace=False)
 
 
-x = scHiCs(files,
+x = scHiCs(files[:5],
            reference_genome='mm9',
            resolution=500000,
            max_distance=4000000,
            format='shortest_score',
            resolution_adjust=True,
            chromosomes='except Y',
-           operations=['convolution'],
+           # operations=['convolution'],
            kernel_shape=3,
            keep_n_strata=10,
            store_full_map=True)
 
+x.select_cells(min_n_contacts=300000,max_short_range_contact=.9)
+
+
+x.plot_contacts()
+
+plt.figure()
+plt.hist(x.contacts)
+plt.xlabel("Number of contacts")
+plt.ylabel('Frequency')
+plt.title('Histogram of contacts')
+plt.show()
 
 
 emb=x.learn_embedding('inner_product', 'MDS', dim=2, n_strata=10)
