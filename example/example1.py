@@ -17,8 +17,9 @@ x = scHiCs(['cell_01','cell_02','cell_03'],
            operations=['convolution'],
            kernel_shape=3,
            keep_n_strata=10,
-           store_full_map=False
+           store_full_map=True
            )
+
 
 
 emb, _ = x.learn_embedding(similarity_method='innerproduct',
