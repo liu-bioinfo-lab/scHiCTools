@@ -51,7 +51,7 @@ class scHiCs:
         self.short_range=np.array([0]*len(list_of_files))
         self.mitotic=np.array([0]*len(list_of_files))
         self.files=list_of_files
-        
+
 
         res_adjust = kwargs.pop('resolution_adjust', True)
         header = kwargs.pop('header', 0)
@@ -86,19 +86,19 @@ class scHiCs:
                     chromosome=ch, resolution=resolution, resolution_adjust=res_adjust,
                     map_filter=map_filter, sparse=sparse, gzip=gzip,
                     keep_n_strata=keep_n_strata, operations=operations, **kwargs)
-                
+
                 self.contacts[idx]+=np.sum(mat)/2+ np.trace(mat)/2
-                
+
                 self.short_range[idx]+=sum([np.sum(mat[i,i:i+int(2000000/self.resolution)]) for i in range(len(mat))])
                 self.mitotic[idx]+=sum([np.sum(mat[i,i+int(2000000/self.resolution):i+int(12000000/self.resolution)]) for i in range(len(mat))])
-                
-                
-                    
-                    
-                
+
+
+
+
+
                 if store_full_map:
                     self.full_maps[ch][idx] = mat
-                
+
                 if keep_n_strata:
                     # self.strata[ch][idx] = strata
                     for strata_idx, stratum in enumerate(strata):
@@ -151,38 +151,38 @@ class scHiCs:
                 for i, mat in enumerate(self.full_maps[ch]):
                     for j in range(self.keep_n_strata):
                         self.strata[ch][j][i, :] = np.diag(mat[j:, :len(mat) - j])
-                        
-    
-    def plot_contacts(self, hist=TRUE, percent=TRUE, **kwargs):
-        
+
+
+    def plot_contacts(self, hist=True, percent=True, **kwargs):
+
         if hist:
             if percent:
                 plt.subplot(1,2,1)
-        
+
             plt.hist(self.contacts, **kwargs)
             plt.xlabel("Number of contacts")
             plt.ylabel('Frequency')
             plt.title('Histogram of contacts')
-        
+
         if percent:
             if hist:
                 plt.subplot(1,2,2)
-        
+
             plt.scatter(self.mitotic*100/self.contacts,self.short_range*100/self.contacts, **kwargs)
             plt.xlabel("% Mitotic contacts")
             plt.ylabel("% Short-range contacts")
             plt.title('Histogram of contacts')
-        
-     
+
+
     def select_cells(self, min_n_contacts=0,max_short_range_contact=1):
         files=np.array(self.files)
         f=files[np.logical_and(self.short_range/self.contacts<=max_short_range_contact,self.contacts>=min_n_contacts)]
         return list(f)
-    
-    
-    
+
+
+
     def scHiCluster(self,dim=2,cutoff=0.8,n_PCs=10,n_clusters=4,**kwargs):
-        
+
         """
         Parameters
         ----------
@@ -206,10 +206,10 @@ class scHiCs:
             label : numpy.array
                 A array of cell labels clustered by HiCluster.
         """
-        
+
         if self.full_maps is None:
             raise ValueError('No full maps stored. scHiCluster is not doable.')
-        
+
         X=None
         for ch in self.chromosomes:
             A=self.full_maps[ch]
@@ -222,10 +222,10 @@ class scHiCs:
                 X=A
             else:
                 X=np.append(X, A, axis=1)
-        
+
         X=PCA(X,n_PCs)
         label=kmeans(X,k=n_clusters,**kwargs)
-        
+
         return X[:,:dim], label
 
 
@@ -279,16 +279,16 @@ class scHiCs:
                                                   print_time=print_time, **kwargs)
                 distance_matrices.append(distance_mat)
         distance_matrices = np.array(distance_matrices)
-        
+
         if aggregation == 'mean':
             final_distance = np.mean(distance_matrices, axis=0)
         elif aggregation == 'median':
             final_distance = np.median(distance_matrices, axis=0)
         else:
             raise ValueError('Aggregation method {0} not supported. Only "mean" or "median".'.format(aggregation))
-            
+
         np.fill_diagonal(final_distance, 0)
-        
+
         embedding_method = embedding_method.lower()
         if embedding_method == 'mds':
             embeddings = MDS(final_distance, dim)
@@ -316,8 +316,8 @@ class scHiCs:
                 return embeddings, final_distance
             else:
                 return embeddings
-    
-    
+
+
     def clustering(self,
                    n_clusters,
                    clustering_method,
@@ -337,8 +337,8 @@ class scHiCs:
             Reproducibility measure.
             Value in ‘InnerProduct’, ‘HiCRep’ or ‘Selfish’.
         aggregation : str, optional
-             Method to aggregate different chromosomes. 
-             Value is either 'mean' or 'median'. 
+             Method to aggregate different chromosomes.
+             Value is either 'mean' or 'median'.
              The default is 'median'.
         n_strata : int or None, optional
             Only consider contacts within this genomic distance.
@@ -354,12 +354,12 @@ class scHiCs:
         label : numpy.array
             An array of cell labels clustered.
         """
-                
+
         distance_matrices = []
         assert n_strata is not None or self.keep_n_strata is not None
         n_strata = n_strata if n_strata is not None else self.keep_n_strata
         new_strata = self.cal_strata(n_strata)
-        
+
         for ch in self.chromosomes:
             print(ch)
             distance_mat = pairwise_distances(new_strata[ch],
@@ -374,9 +374,9 @@ class scHiCs:
             final_distance = np.median(distance_matrices, axis=0)
         else:
             raise ValueError('Aggregation method {0} not supported. Only "mean" or "median".'.format(aggregation))
-        
+
         np.fill_diagonal(final_distance, 0)
-        
+
         if clustering_method=='kmeans':
             embeddings = MDS(final_distance, n_clusters)
             label=kmeans(embeddings,
@@ -386,7 +386,7 @@ class scHiCs:
             label=spectral_clustering(final_distance,
                                       data_type='distance_matrix',
                                       n_clusters=n_clusters,
-                                      **kwargs) 
+                                      **kwargs)
         elif clustering_method=='HAC':
             label=HAC(final_distance,
                       data_type='distance_matrix',
@@ -394,8 +394,5 @@ class scHiCs:
                       **kwargs)
         else:
             raise ValueError('Embedding method {0} not supported. '.format(clustering_method))
-        
-        return label
-        
-        
 
+        return label
