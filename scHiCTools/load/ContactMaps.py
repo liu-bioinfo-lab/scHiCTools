@@ -156,7 +156,8 @@ class scHiCs:
     def plot_contacts(self, hist=TRUE, percent=TRUE, **kwargs):
         
         if hist:
-            plt.subplot(1,2,1)
+            if percent:
+                plt.subplot(1,2,1)
         
             plt.hist(self.contacts, **kwargs)
             plt.xlabel("Number of contacts")
@@ -164,7 +165,8 @@ class scHiCs:
             plt.title('Histogram of contacts')
         
         if percent:
-            plt.subplot(1,2,2)
+            if hist:
+                plt.subplot(1,2,2)
         
             plt.scatter(self.mitotic*100/self.contacts,self.short_range*100/self.contacts, **kwargs)
             plt.xlabel("% Mitotic contacts")
