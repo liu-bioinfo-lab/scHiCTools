@@ -14,10 +14,10 @@ sys.path.insert(0, os.path.abspath(
 files=os.listdir(os.getcwd()+'/1CDX_cells')
 for i in range(len(files)):
     files[i]='1CDX_cells/'+files[i]+'/new_adj'
-files=np.random.choice(files, size=20, replace=False)
+# files=np.random.choice(files, size=20, replace=False)
 
 
-x = scHiCs(files[:5],
+x = scHiCs(files,
            reference_genome='mm9',
            resolution=500000,
            max_distance=4000000,
@@ -27,7 +27,11 @@ x = scHiCs(files[:5],
            # operations=['convolution'],
            kernel_shape=3,
            keep_n_strata=10,
-           store_full_map=True)
+           # store_full_map=True
+           )
+
+x.plot_contacts()
+
 
 x.select_cells(min_n_contacts=300000,max_short_range_contact=.9)
 
