@@ -32,7 +32,6 @@ x = scHiCs(files,
 
 x.plot_contacts()
 
-
 x.select_cells(min_n_contacts=300000,max_short_range_contact=.9)
 
 
