@@ -171,7 +171,7 @@ class scHiCs:
             plt.scatter(self.mitotic*100/self.contacts,self.short_range*100/self.contacts, **kwargs)
             plt.xlabel("% Mitotic contacts")
             plt.ylabel("% Short-range contacts")
-            plt.title('Histogram of contacts')
+            plt.title('Percentage cells with short-range contacts v.s. contacts at the mitotic band')
 
 
     def select_cells(self, min_n_contacts=0,max_short_range_contact=1):
