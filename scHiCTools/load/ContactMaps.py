@@ -58,6 +58,7 @@ class scHiCs:
         custom_format = kwargs.pop('customized_format', None)
         map_filter = kwargs.pop('map_filter', 0.)
         gzip = kwargs.pop('gzip', False)
+        # operations_param=kwargs.pop('operations_param',None)
 
         assert keep_n_strata is not None or store_full_map is True
 
@@ -85,7 +86,8 @@ class scHiCs:
                     custom_format=custom_format, header=header,
                     chromosome=ch, resolution=resolution, resolution_adjust=res_adjust,
                     map_filter=map_filter, sparse=sparse, gzip=gzip,
-                    keep_n_strata=keep_n_strata, operations=operations, **kwargs)
+                    keep_n_strata=keep_n_strata, operations=operations,
+                    **kwargs)
 
                 self.contacts[idx]+=np.sum(mat)/2+ np.trace(mat)/2
 
