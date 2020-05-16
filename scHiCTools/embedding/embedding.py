@@ -352,7 +352,7 @@ def UMAP(mat,
 
 # PHATE algorithm :------------------------------
 
-def MMDS(dist_mat,
+def nMDS(dist_mat,
          init,
          momentum=.1, iteration=1000):
     '''
@@ -412,8 +412,6 @@ def VNE(P, t):
 
 def PHATE(mat, dim=2, k=5, a=1, gamma=1, t_max=100):
     '''
-
-
     Parameters
     ----------
     mat : numpy array
@@ -483,7 +481,7 @@ def PHATE(mat, dim=2, k=5, a=1, gamma=1, t_max=100):
     
     
     
-    # apply metric MDS to Dt with Y as an initialization
-    Y=MMDS(Dt,Y,dim)
+    # apply non-metric MDS to Dt with Y as an initialization
+    Y=nMDS(Dt,Y,dim)
 
     return(Y)
