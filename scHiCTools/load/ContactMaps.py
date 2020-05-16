@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 
 class scHiCs:
     def __init__(self, list_of_files, reference_genome, resolution, sparse=False, chromosomes='all',
-                 format='customized', keep_n_strata=0, store_full_map=False,
+                 format='customized', keep_n_strata=10, store_full_map=False,
                  operations=None, **kwargs):
         """
         Args:
@@ -94,8 +94,6 @@ class scHiCs:
 
 
 
-
-
                 if store_full_map:
                     self.full_maps[ch][idx] = mat
 
@@ -153,13 +151,13 @@ class scHiCs:
                         self.strata[ch][j][i, :] = np.diag(mat[j:, :len(mat) - j])
 
 
-    def plot_contacts(self, hist=True, percent=True, **kwargs):
+    def plot_contacts(self, hist=True, percent=True, s=1, bins=10, **kwargs):
 
         if hist:
             if percent:
                 plt.subplot(1,2,1)
 
-            plt.hist(self.contacts, **kwargs)
+            plt.hist(self.contacts,bins=bins, **kwargs)
             plt.xlabel("Number of contacts")
             plt.ylabel('Frequency')
             plt.title('Histogram of contacts')
@@ -168,10 +166,10 @@ class scHiCs:
             if hist:
                 plt.subplot(1,2,2)
 
-            plt.scatter(self.mitotic*100/self.contacts,self.short_range*100/self.contacts, **kwargs)
+            plt.scatter(self.mitotic*100/self.contacts,self.short_range*100/self.contacts, s, **kwargs)
             plt.xlabel("% Mitotic contacts")
             plt.ylabel("% Short-range contacts")
-            plt.title('Percentage cells with short-range contacts v.s. contacts at the mitotic band')
+            plt.title('Short-range contacts v.s. contacts at the mitotic band')
 
 
     def select_cells(self, min_n_contacts=0,max_short_range_contact=1):
@@ -181,20 +179,20 @@ class scHiCs:
 
 
 
-    def scHiCluster(self,dim=2,cutoff=0.8,n_PCs=10,n_clusters=4,**kwargs):
+    def scHiCluster(self,dim=2,n_clusters=4,cutoff=0.8,n_PCs=10,**kwargs):
 
         """
         Parameters
         ----------
         dim : int, optional
             Number of dimension of embedding. The default is 2.
+        n_clusters : int, optional
+            Number of clusters. The default is 4.
         cutoff : float, optional
             The cutoff proportion to convert the real contact
             matrix into binary matrix. The default is 0.8.
         n_PCs : int, optional
             Number of principal components. The default is 10.
-        k : int, optional
-            Number of clusters. The default is 4.
         **kwargs :
             Other arguments passed to function.
 
@@ -212,6 +210,7 @@ class scHiCs:
 
         X=None
         for ch in self.chromosomes:
+            print('Processing chromosomes {}'.format(ch))
             A=self.full_maps[ch]
             if len(A.shape)==3:
                 n=A.shape[1]*A.shape[2]
