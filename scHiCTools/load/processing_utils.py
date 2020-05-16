@@ -16,7 +16,7 @@ def matrix_operation(mat, operations, **kwargs):
         if op == 'smoothing':
             mat = convolution(mat, kwargs.pop('kernel_shape', 3))
         if op == 'random_walk':
-            mat = random_walk(mat, kwargs.pop('random_walk_ratio', 1.0))
+            mat = random_walk(mat, kwargs.pop('random_walk_ratio', 1.0),kwargs.pop('t', 1))
         if op == 'network_enhancing':
             mat = network_enhancing(mat, kwargs.pop('kNN', 20),
                                     kwargs.pop('iterations', 1), kwargs.pop('alpha', 0.9))
@@ -114,12 +114,13 @@ def convolution(mat, kernel_shape=3):
     return mat
 
 
-def random_walk(mat, random_walk_ratio=1.0):
+def random_walk(mat, random_walk_ratio=1.0,t=1):
     sm = np.sum(mat, axis=1)
     sm = np.where(sm == 0, 1, sm)
     sm = np.tile(sm, (len(mat), 1)).T
     walk = mat / sm
-    mat = random_walk_ratio * walk.T.dot(mat).dot(walk) + (1 - random_walk_ratio) * mat
+    for i in range(t):
+        mat = random_walk_ratio * mat.dot(walk) + (1 - random_walk_ratio) * mat
     return mat
 
 
