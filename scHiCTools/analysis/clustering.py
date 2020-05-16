@@ -16,7 +16,8 @@ from scipy.sparse import csgraph
 
 def kmeans(data,
            k=4,
-           weights=None, iteration=1000):
+           weights=None,
+           iteration=1000):
     """
     This function is a impliment of K-Means algorithm.
 
@@ -25,15 +26,26 @@ def kmeans(data,
         k: number of clusters.
         weights: list of the weight of every point, should either be 'None' or
                 have the length same as the number of rows in data.
+            
 
     Output:
         a list of the label of every point.
     """
-
-    # Random initialize centroids
-    centroids=np.array(range(len(data)))
-    np.random.shuffle(centroids)
-    centroids=data[centroids[:k],:]
+    
+    
+    # kmeans++
+    data=np.array(data)
+    n,p=data.shape
+    cen=[None]*k
+    p=np.ones(n)/n
+    index=np.arange(n)
+    for i in range(k):
+        cen[i]=int(np.random.choice(index,size=1,p=p))
+        p=np.array([np.linalg.norm(data-data[cen[j]],axis=1) for j in np.arange(i+1)]).min(axis=0)
+        p=p/sum(p)
+    centroids=data[cen]
+    
+    
     label=np.zeros(len(data))
 
     # loop to find the proper cluster
