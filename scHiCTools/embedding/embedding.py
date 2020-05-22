@@ -5,7 +5,7 @@ import scipy.optimize as opt
 from scipy.sparse import csgraph
 import scipy.spatial.distance as dis
 from scipy.optimize import curve_fit
-
+from scipy.spatial.distance import squareform
 
 # PCA :---------------------------------------------------
 
@@ -102,12 +102,81 @@ def x2p(D, tol=1e-5, perplexity=30.0):
 
 
 
+
+MACHINE_EPSILON = np.finfo(np.double).eps
+
+def kl_divergence(params, P, degrees_of_freedom, n_samples, n_components):
+    """t-SNE objective function: gradient of the KL divergence
+    of p_ijs and q_ijs and the absolute error.
+
+    Parameters
+    ----------
+    params : array, shape (n_params,)
+        Unraveled embedding.
+
+    P : array, shape (n_samples * (n_samples-1) / 2,)
+        Condensed joint probability matrix.
+
+    degrees_of_freedom : int
+        Degrees of freedom of the Student's-t distribution.
+
+    n_samples : int
+        Number of samples.
+
+    n_components : int
+        Dimension of the embedded space.
+    
+    Returns
+    -------
+    kl_divergence : float
+        Kullback-Leibler divergence of p_ij and q_ij.
+
+    grad : array, shape (n_params,)
+        Unraveled gradient of the Kullback-Leibler divergence with respect to the embedding.
+    """
+    X_embedded = params.reshape(n_samples, n_components)
+
+    # Q is a heavy-tailed distribution: Student's t-distribution
+    dist = dis.pdist(X_embedded, "sqeuclidean")
+    dist /= degrees_of_freedom
+    dist += 1.
+    dist **= (degrees_of_freedom + 1.0) / -2.0
+    Q = np.maximum(dist / (2.0 * np.sum(dist)), MACHINE_EPSILON)
+
+    # Optimization trick below: np.dot(x, y) is faster than
+    # np.sum(x * y) because it calls BLAS
+
+    # Objective: C (Kullback-Leibler divergence of P and Q)
+    kl_divergence = 2.0 * np.dot(
+            P, np.log(np.maximum(P, MACHINE_EPSILON) / Q))
+    
+
+    # Gradient: dC/dY
+    # pdist always returns double precision distances. Thus we need to take
+    grad = np.ndarray((n_samples, n_components), dtype=params.dtype)
+    PQd = squareform((P - Q) * dist)
+    for i in range(n_samples):
+        grad[i] = np.dot(np.ravel(PQd[i], order='K'),
+                         X_embedded[i] - X_embedded)
+    grad = grad.ravel()
+    c = 2.0 * (degrees_of_freedom + 1.0) / degrees_of_freedom
+    grad *= c
+
+    return kl_divergence, grad
+
+
+
+
+
+
+
 def tSNE(mat,
          n_dim=2,
          perp=30.0,
-         iteration=1000,
-         momentum = 0.2,
-         eta = 500):
+         n_iter=1000,
+         momentum = 0.5,
+         rate = 200,
+         tol=1e-5):
     """
     This function is a slightly different implimentation of t-SNE.
         In the function, instead of calculating the Euclidean distance,
@@ -117,73 +186,68 @@ def tSNE(mat,
         mat: matrix contain the distance between every two point.
                 (should be symmetric)
         n_dim: dimension of the space embedding in.
-        perp: perplexity
-        momentum:
+        perp: perplexity.
+        n_iter: max number of iteration.
+        momentum: momentum of gredient decendent.
         rate: gredient decendent rate.
 
     Output:
         A matrix have n columns. Every row of the output matrix represent a point.
 
     """
-
+    
     # Error messagers
     if len(mat)!=len(mat[0]):
-        raise ValueError('mat is not a distance matrix!')
+        raise ValueError('tSNE input mat is not a distance matrix!')
     elif np.sum(mat.T!=mat)>0:
-        raise ValueError('mat is not a distance matrix!')
+        raise ValueError('tSNE input mat is not a distance matrix!')
     elif sum(np.diag(mat)!=0)!=0:
-        raise ValueError('mat is not a distance matrix!')
+        raise ValueError('tSNE input mat is not a distance matrix!')
+    
+    distances = mat.astype(np.float32, copy=False)
+    conditional_P = x2p(distances, tol, perp)
+    P = conditional_P + conditional_P.T
+    sum_P = np.maximum(np.sum(P), MACHINE_EPSILON)
+    P = np.maximum(squareform(P) / sum_P, MACHINE_EPSILON)
+    # P=_joint_probabilities(mat, perp)
+    degrees_of_freedom = max(n_dim - 1, 1)
+    n_samples=len(mat)
+    X_embedded = np.random.normal(size=(n_samples, n_dim))
+    
+    # (it, n_iter, n_iter_check=1, momentum=0.8)
+    
+    params = X_embedded.ravel().copy()
+    update = np.zeros_like(params)
+    gains = np.ones_like(params)
+    error = np.finfo(np.float).max
+    
+    
+    for i in range(n_iter):
 
+        error, grad = kl_divergence(params, P,
+                                    degrees_of_freedom,
+                                    n_samples, n_dim)
+        grad_norm = np.linalg.norm(grad)
 
-    n=len(mat)
-    Y = np.random.randn(n, n_dim)
-    dY = np.zeros((n, n_dim))
-    iY = np.zeros((n, n_dim))
-    gains = np.ones((n, n_dim))
-
-    # Compute P-values
-    P = x2p(mat, 1e-5, perp)
-    P = P + np.transpose(P)
-    P = P / np.sum(P)
-    P = P * 4.			# early exaggeration
-    P = np.maximum(P, 1e-12)
-
-    # Run iterations
-    for iter in range(iteration):
-
-        # Compute pairwise affinities
-        sum_Y = np.sum(np.square(Y), 1)
-        num = -2. * np.dot(Y, Y.T)
-        num = 1. / (1. + np.add(np.add(num, sum_Y).T, sum_Y))
-        num[range(n), range(n)] = 0.
-        Q = num / np.sum(num)
-        Q = np.maximum(Q, 1e-12)
-
-        # Compute gradient
-        PQ = P - Q
-        for i in range(n):
-            dY[i, :] = np.sum(np.tile(PQ[:, i] * num[:, i], (n_dim, 1)).T * (Y[i, :] - Y), 0)
-
-        # Perform the update
-        gains = (gains + 0.2) * ((dY > 0.) != (iY > 0.)) + \
-                (gains * 0.8) * ((dY > 0.) == (iY > 0.))
-        iY = momentum * iY - eta * (gains * dY)
-        Y = Y + iY
-        Y = Y - np.tile(np.mean(Y, 0), (n, 1))
-
-        # Compute current value of cost function
-        if (iter + 1) % 100 == 0:
-            C = np.sum(P * np.log(P / Q))
-            print("Iteration %d: error is %f" % (iter + 1, C))
-
-        # Stop lying about P-values
-        if iter == 100:
-            P = P / 4.
-        if np.sum(abs(iY))<.001:
+        inc = update * grad < 0.0
+        dec = np.invert(inc)
+        gains[inc] += 0.2
+        gains[dec] *= 0.8
+        np.clip(gains, 0.01, np.inf, out=gains)
+        grad *= gains
+        update = momentum * update - rate * grad
+        params += update
+        
+        if (i+1)%100==0:
+            print('t-SNE iteration {0}: KL-divergence is {1:.2e}.'.format(i+1,error))
+            
+        if grad_norm <= tol:
             break
         
-    Y=Y/np.std(Y)
-    return Y
+    return(params.reshape(n_samples, n_dim))
+    
+    
+    
 
 
 # SpectralEmbedding :----------------------------------
@@ -311,7 +375,7 @@ def UMAP(mat,
         distance matrix.
     dim : int, optional
         Dimension of embedding space. The default is 2.
-    n : TYPE, optional
+    n : int, optional
         neighborhood size. The default is 5.
     min_dist : TYPE, optional
         DESCRIPTION. The default is 1.
@@ -410,7 +474,7 @@ def VNE(P, t):
 
 
 
-def PHATE(mat, dim=2, k=5, a=1, gamma=1, t_max=100):
+def PHATE(mat, dim=2, k=5, a=1, gamma=1, t_max=100, momentum=.1, iteration=1000):
     '''
     Parameters
     ----------
@@ -482,6 +546,6 @@ def PHATE(mat, dim=2, k=5, a=1, gamma=1, t_max=100):
     
     
     # apply non-metric MDS to Dt with Y as an initialization
-    Y=nMDS(Dt,Y,dim)
+    Y=nMDS(Dt,Y,momentum=.1, iteration=1000)
 
     return(Y)
