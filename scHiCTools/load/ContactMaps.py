@@ -51,7 +51,13 @@ class scHiCs:
         self.short_range=np.array([0]*len(list_of_files))
         self.mitotic=np.array([0]*len(list_of_files))
         self.files=list_of_files
-
+        self.strata = {
+            ch: [np.zeros((self.num_of_cells, self.chromosome_lengths[ch] - i)) for i in range(keep_n_strata)]
+            for ch in self.chromosomes} if keep_n_strata else None
+        self.full_maps = None
+        
+        
+        
 
         res_adjust = kwargs.pop('resolution_adjust', True)
         header = kwargs.pop('header', 0)
@@ -62,10 +68,7 @@ class scHiCs:
 
         assert keep_n_strata is not None or store_full_map is True
 
-        self.strata = {
-            ch: [np.zeros((self.num_of_cells, self.chromosome_lengths[ch] - i)) for i in range(keep_n_strata)]
-            for ch in self.chromosomes} if keep_n_strata else None
-
+        
         if not store_full_map:
             self.full_maps = None
         elif sparse:
@@ -176,8 +179,20 @@ class scHiCs:
 
     def select_cells(self, min_n_contacts=0,max_short_range_contact=1):
         files=np.array(self.files)
-        f=files[np.logical_and(self.short_range/self.contacts<=max_short_range_contact,self.contacts>=min_n_contacts)]
-        return list(f)
+        selected=np.logical_and(self.short_range/self.contacts<=max_short_range_contact,self.contacts>=min_n_contacts)
+        self.num_of_cells=sum(selected)
+        self.files=files[selected]
+        self.contacts=self.contacts[selected]
+        self.short_range=self.short_range[selected]
+        self.mitotic=self.mitotic[selected]
+        if self.strata is not None:
+            for ch in self.chromosomes:
+                self.strata[ch]=self.strata[ch][selected]
+        if self.full_maps is not None:
+            for ch in self.chromosomes:
+                self.full_maps[ch]=self.full_maps[ch][selected]
+            
+        return files[selected]
 
 
 
@@ -213,7 +228,7 @@ class scHiCs:
         X=None
         for ch in self.chromosomes:
             print('Processing chromosomes {}'.format(ch))
-            A=self.full_maps[ch]
+            A=self.full_maps[ch].copy()
             if len(A.shape)==3:
                 n=A.shape[1]*A.shape[2]
                 A.shape=(A.shape[0],n)
