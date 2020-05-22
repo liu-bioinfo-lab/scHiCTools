@@ -5,7 +5,7 @@ import scipy.spatial.distance as dis
 
 
 def pairwise_distances(all_strata, similarity_method,
-                       print_time=False, sigma=.5, **kwargs):
+                       print_time=False, sigma=.5, window_size=10):
     """
     Args:
         all_strata (numpy.array): [n_cells * n_bins, n_cells * (n_bins - 1), ...]
@@ -86,7 +86,7 @@ def pairwise_distances(all_strata, similarity_method,
         n_cells, n_bins = all_strata[0].shape
         n_strata = len(all_strata), 
         # window_size = n_bins // (n_windows + 1) * 2
-        window_size=kwargs.pop('window_size', 10)
+        # window_size=kwargs.pop('window_size', 10)
         n_windows=n_bins//window_size
         
         # if window_size > n_strata:
@@ -117,7 +117,7 @@ def pairwise_distances(all_strata, similarity_method,
         # print(np.sum(fingerprints, axis=1))
         distance = dis.pdist(fingerprints, 'euclidean')
         distance = dis.squareform(distance)
-        similarity = np.exp(- kwargs.pop('sigma', 0.5) * distance)
+        similarity = np.exp(- sigma * distance)
         distance_mat = np.sqrt(2 - 2 * similarity)
         t2 = time()
         
