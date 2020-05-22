@@ -17,7 +17,8 @@ from scipy.sparse import csgraph
 def kmeans(data,
            k=4,
            weights=None,
-           iteration=1000):
+           iteration=1000,
+           **kwargs):
     """
     This function is a impliment of K-Means algorithm.
 
