@@ -153,13 +153,13 @@ class scHiCs:
                         self.strata[ch][j][i, :] = np.diag(mat[j:, :len(mat) - j])
 
 
-    def plot_contacts(self, hist=True, percent=True, s=1, bins=10, **kwargs):
+    def plot_contacts(self, hist=True, percent=True, s=1, bins=10):
 
         if hist:
             if percent:
                 plt.subplot(1,2,1)
 
-            plt.hist(self.contacts,bins=bins, **kwargs)
+            plt.hist(self.contacts,bins=bins)
             plt.xlabel("Number of contacts")
             plt.ylabel('Frequency')
             plt.title('Histogram of contacts')
@@ -168,7 +168,7 @@ class scHiCs:
             if hist:
                 plt.subplot(1,2,2)
 
-            plt.scatter(self.mitotic*100/self.contacts,self.short_range*100/self.contacts, s, **kwargs)
+            plt.scatter(self.mitotic*100/self.contacts,self.short_range*100/self.contacts, s)
             plt.xlabel("% Mitotic contacts")
             plt.ylabel("% Short-range contacts")
             plt.title('Short-range contacts v.s. contacts at the mitotic band')
@@ -225,7 +225,7 @@ class scHiCs:
                 X=np.append(X, A, axis=1)
 
         X=PCA(X,n_PCs)
-        label=kmeans(X,k=n_clusters,**kwargs)
+        label=kmeans(X,n_clusters,kwargs.pop(weights,None),kwargs.pop(iteration,1000))
 
         return X[:,:dim], label
 
@@ -267,7 +267,7 @@ class scHiCs:
             time2=0
             for ch in self.chromosomes:
                 print(ch)
-                distance_mat,t1,t2 = pairwise_distances(new_strata[ch], similarity_method=similarity_method, print_time=print_time, **kwargs)
+                distance_mat,t1,t2 = pairwise_distances(new_strata[ch], similarity_method, print_time, kwargs.pop('sigma',.5), kwargs.pop('window_size',10))
                 time1=time1+t1
                 time2=time2+t2
                 distance_matrices.append(distance_mat)
@@ -276,8 +276,11 @@ class scHiCs:
         else:
             for ch in self.chromosomes:
                 print(ch)
-                distance_mat = pairwise_distances(new_strata[ch], similarity_method=similarity_method,
-                                                  print_time=print_time, **kwargs)
+                distance_mat = pairwise_distances(new_strata[ch],
+                                                  similarity_method,
+                                                  print_time,
+                                                  kwargs.get('sigma',.5),
+                                                  kwargs.get('window_size',10))
                 distance_matrices.append(distance_mat)
         distance_matrices = np.array(distance_matrices)
 
@@ -294,11 +297,27 @@ class scHiCs:
         if embedding_method == 'mds':
             embeddings = MDS(final_distance, dim)
         elif embedding_method == 'tsne':
-            embeddings = tSNE(final_distance, dim, **kwargs)
+            embeddings = tSNE(final_distance, dim, 
+                              kwargs.pop('perp',30),
+                              kwargs.pop('iteration',1000),
+                              kwargs.pop('momentum', 0.5),
+                              kwargs.pop('rate', 200),
+                              kwargs.pop('tol',1e-5))
         elif embedding_method == 'umap':
-            embeddings = UMAP(final_distance, dim, **kwargs)
+            embeddings = UMAP(final_distance, dim, 
+                              kwargs.pop('n',5),
+                              kwargs.pop('min_dist',1),
+                              kwargs.pop('n_epochs',10),
+                              kwargs.pop('alpha',1),
+                              kwargs.pop('n_neg_samples',0))
         elif embedding_method == 'phate':
-            embeddings = PHATE(final_distance, dim, **kwargs)
+            embeddings = PHATE(final_distance, dim,
+                               kwargs.pop('k',5), 
+                               kwargs.pop('a',1),
+                               kwargs.pop('gamma',1),
+                               kwargs.pop('t_max',100),
+                               kwargs.pop('momentum',.1),
+                               kwargs.pop('iteration',1000))
         elif embedding_method == 'spectral_embedding':
             graph=np.exp(-np.square(final_distance)/np.mean(final_distance**2))
             graph = graph-np.diag(graph.diagonal())
@@ -364,8 +383,10 @@ class scHiCs:
         for ch in self.chromosomes:
             print(ch)
             distance_mat = pairwise_distances(new_strata[ch],
-                            similarity_method=similarity_method,
-                            print_time=print_time, **kwargs)
+                                              similarity_method,
+                                              print_time,
+                                              kwargs.get('sigma',.5),
+                                              kwargs.get('window_size',10))
             distance_matrices.append(distance_mat)
         distance_matrices = np.array(distance_matrices)
 
@@ -377,7 +398,8 @@ class scHiCs:
             raise ValueError('Aggregation method {0} not supported. Only "mean" or "median".'.format(aggregation))
 
         np.fill_diagonal(final_distance, 0)
-
+        
+        clustering_method=clustering_method.lower()
         if clustering_method=='kmeans':
             embeddings = MDS(final_distance, n_clusters)
             label=kmeans(embeddings,
@@ -388,11 +410,11 @@ class scHiCs:
                                       data_type='distance_matrix',
                                       n_clusters=n_clusters,
                                       **kwargs)
-        elif clustering_method=='HAC':
+        elif clustering_method=='hac':
             label=HAC(final_distance,
-                      data_type='distance_matrix',
-                      n_clusters=n_clusters,
-                      **kwargs)
+                      'distance_matrix',
+                      n_clusters,
+                      kwargs.pop('method','centroid'))
         else:
             raise ValueError('Embedding method {0} not supported. '.format(clustering_method))
 
