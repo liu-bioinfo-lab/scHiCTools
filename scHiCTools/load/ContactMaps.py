@@ -240,7 +240,7 @@ class scHiCs:
                 X=np.append(X, A, axis=1)
 
         X=PCA(X,n_PCs)
-        label=kmeans(X,n_clusters,kwargs.pop(weights,None),kwargs.pop(iteration,1000))
+        label=kmeans(X,n_clusters,kwargs.pop('weights',None),kwargs.pop('iteration',1000))
 
         return X[:,:dim], label
 
@@ -292,10 +292,10 @@ class scHiCs:
             for ch in self.chromosomes:
                 print(ch)
                 distance_mat = pairwise_distances(new_strata[ch],
-                                                  similarity_method,
-                                                  print_time,
-                                                  kwargs.get('sigma',.5),
-                                                  kwargs.get('window_size',10))
+                                   similarity_method,
+                                   print_time,
+                                   kwargs.get('sigma',.5),
+                                   kwargs.get('window_size',10))
                 distance_matrices.append(distance_mat)
         distance_matrices = np.array(distance_matrices)
 
