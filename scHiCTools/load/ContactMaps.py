@@ -227,7 +227,7 @@ class scHiCs:
 
         X=None
         for ch in self.chromosomes:
-            print('Processing chromosomes {}'.format(ch))
+            print('HiCluster processing chromosomes {}'.format(ch))
             A=self.full_maps[ch].copy()
             if len(A.shape)==3:
                 n=A.shape[1]*A.shape[2]
