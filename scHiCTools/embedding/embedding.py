@@ -10,10 +10,26 @@ from scipy.spatial.distance import squareform
 # PCA :---------------------------------------------------
 
 def PCA(X, dim=2):
+    '''
+    
+    Parameters
+    ----------
+    X : numpy array
+        Coordinates of input data points.
+    dim : int, optional
+        The dimension of the projected points. The default is 2.
+
+    Returns
+    -------
+    Y : numpy array
+        Coordinates of the projected points.
+
+    '''
+    
     X=X-np.mean(X,axis=0)
     U, S, V = np.linalg.svd(X, full_matrices=False, compute_uv=True)
-    X = np.dot(V[:dim,:],X.T)
-    return(X.T)
+    Y = np.dot(V[:dim,:],X.T).T
+    return(Y)
     
 
 
@@ -21,6 +37,21 @@ def PCA(X, dim=2):
 # MDS :---------------------------------------------------
 
 def MDS(mat, n=2):
+    '''
+
+    Parameters
+    ----------
+    mat : numpy array
+        Distance matrix of the data points.
+    n : int, optional
+        The dimension of the projected points. The default is 2.
+
+    Returns
+    -------
+    co : numpy array
+        Coordinates of the projected points.
+
+    '''
     # mat = np.sqrt(2 - 2 * mat)
     h = np.eye(len(mat)) - np.ones(mat.shape) / len(mat)
     k = -0.5 * h.dot(mat * mat).dot(h)
@@ -101,8 +132,6 @@ def x2p(D, tol=1e-5, perplexity=30.0):
     return P
 
 
-
-
 MACHINE_EPSILON = np.finfo(np.double).eps
 
 def kl_divergence(params, P, degrees_of_freedom, n_samples, n_components):
@@ -111,10 +140,10 @@ def kl_divergence(params, P, degrees_of_freedom, n_samples, n_components):
 
     Parameters
     ----------
-    params : array, shape (n_params,)
+    params : numpy array, shape (n_params,)
         Unraveled embedding.
 
-    P : array, shape (n_samples * (n_samples-1) / 2,)
+    P : numpy array, shape (n_samples * (n_samples-1) / 2,)
         Condensed joint probability matrix.
 
     degrees_of_freedom : int
@@ -131,7 +160,7 @@ def kl_divergence(params, P, degrees_of_freedom, n_samples, n_components):
     kl_divergence : float
         Kullback-Leibler divergence of p_ij and q_ij.
 
-    grad : array, shape (n_params,)
+    grad : numpy array, shape (n_params,)
         Unraveled gradient of the Kullback-Leibler divergence with respect to the embedding.
     """
     X_embedded = params.reshape(n_samples, n_components)
@@ -165,36 +194,38 @@ def kl_divergence(params, P, degrees_of_freedom, n_samples, n_components):
     return kl_divergence, grad
 
 
-
-
-
-
-
 def tSNE(mat,
          n_dim=2,
          perp=30.0,
          n_iter=1000,
          momentum = 0.5,
-         rate = 200,
+         rate = 200.0,
          tol=1e-5):
-    """
-    This function is a slightly different implimentation of t-SNE.
-        In the function, instead of calculating the Euclidean distance,
-        the distance between different points is pass direct to the function.
+    '''
 
-    Input:
-        mat: matrix contain the distance between every two point.
-                (should be symmetric)
-        n_dim: dimension of the space embedding in.
-        perp: perplexity.
-        n_iter: max number of iteration.
-        momentum: momentum of gredient decendent.
-        rate: gredient decendent rate.
+    Parameters
+    ----------
+    mat : numpy array
+        Distance matrix of the data points.
+    n_dim : int, optional
+        The dimension of the projected points. The default is 2.
+    perp : float, optional
+        Perplexity. The default is 30.0.
+    n_iter : int, optional
+        Max number of iteration. The default is 1000.
+    momentum : float, optional
+        Momentum of gredient decendent. The default is 0.5.
+    rate : float, optional
+         Gredient decendent rate. The default is 200.
+    tol : float, optional
+         The threshold of gradient norm to stop the iteration of grendient decendent. The default is 1e-5.
 
-    Output:
-        A matrix have n columns. Every row of the output matrix represent a point.
+    Returns
+    -------
+    Y : numpy array
+        Coordinates of the projected points.
 
-    """
+    '''
     
     # Error messagers
     if len(mat)!=len(mat[0]):
@@ -243,8 +274,9 @@ def tSNE(mat,
             
         if grad_norm <= tol:
             break
-        
-    return(params.reshape(n_samples, n_dim))
+    
+    Y=params.reshape(n_samples, n_dim)
+    return Y
     
     
     
