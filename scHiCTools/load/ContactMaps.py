@@ -35,7 +35,6 @@ class scHiCs:
             If 'None', it will store full matrices in numpy matrix or scipy sparse format,
             which will use too much memory sometimes
             store_full_map (bool): whether store all contact maps
-            normalization (None or str): 'OE' (observed / expected), 'VC', 'VC_SQRT', 'KR'
             operations (None or list): the methods use for pre-processing or smoothing the maps given in a list.
             The operations will happen in the given order. Operations: 'reduce_sparsity', 'convolution',
             'random_walk', 'network_enhancing'. Default: None.
@@ -59,12 +58,11 @@ class scHiCs:
         
         
 
-        res_adjust = kwargs.pop('resolution_adjust', True)
+        res_adjust = kwargs.pop('adjust_resolution', True)
         header = kwargs.pop('header', 0)
         custom_format = kwargs.pop('customized_format', None)
         map_filter = kwargs.pop('map_filter', 0.)
         gzip = kwargs.pop('gzip', False)
-        # operations_param=kwargs.pop('operations_param',None)
 
         assert keep_n_strata is not None or store_full_map is True
 
@@ -156,13 +154,14 @@ class scHiCs:
                         self.strata[ch][j][i, :] = np.diag(mat[j:, :len(mat) - j])
 
 
-    def plot_contacts(self, hist=True, percent=True, s=1, bins=10):
+    def plot_contacts(self, hist=True, percent=True, 
+                      size=1, bins=10, color='#1f77b4'):
 
         if hist:
             if percent:
                 plt.subplot(1,2,1)
 
-            plt.hist(self.contacts,bins=bins)
+            plt.hist(self.contacts,bins=bins,color=color)
             plt.xlabel("Number of contacts")
             plt.ylabel('Frequency')
             plt.title('Histogram of contacts')
@@ -171,7 +170,7 @@ class scHiCs:
             if hist:
                 plt.subplot(1,2,2)
 
-            plt.scatter(self.mitotic*100/self.contacts,self.short_range*100/self.contacts, s)
+            plt.scatter(self.mitotic*100/self.contacts,self.short_range*100/self.contacts, s=size, c=color)
             plt.xlabel("% Mitotic contacts")
             plt.ylabel("% Short-range contacts")
             plt.title('Short-range contacts v.s. contacts at the mitotic band')
@@ -215,11 +214,10 @@ class scHiCs:
 
         Returns
         -------
-        List of 2 componments:
-            embedding : numpy.array
-                Embedding of cells using HiCluster.
-            label : numpy.array
-                A array of cell labels clustered by HiCluster.
+        embedding : numpy.array
+            Embedding of cells using HiCluster.
+        label : numpy.array
+            A array of cell labels clustered by HiCluster.
         """
 
         if self.full_maps is None:
