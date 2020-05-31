@@ -186,10 +186,10 @@ class scHiCs:
         self.mitotic=self.mitotic[selected]
         if self.strata is not None:
             for ch in self.chromosomes:
-                self.strata[ch]=[self.strata[ch][i] for i in selected]
+                self.strata[ch]=[self.strata[ch][i] for i in np.arange(len(selected))[selected]]
         if self.full_maps is not None:
             for ch in self.chromosomes:
-                self.full_maps[ch]=[self.full_maps[ch][i] for i in selected]
+                self.full_maps[ch]=self.full_maps[ch][selected]
         if self.distance is not None:
             self.distance=self.distance[:,selected,:][:,:,selected]
             
