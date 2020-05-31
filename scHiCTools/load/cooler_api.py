@@ -280,7 +280,6 @@ def parse_region(reg, chromsizes=None):
         chrom, start, end = reg
         start = int(start) if start is not None else start
         end = int(end) if end is not None else end
-
     try:
         clen = chromsizes[chrom] if chromsizes is not None else None
     except KeyError:
