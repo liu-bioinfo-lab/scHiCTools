@@ -54,8 +54,8 @@ class scHiCs:
             ch: [np.zeros((self.num_of_cells, self.chromosome_lengths[ch] - i)) for i in range(keep_n_strata)]
             for ch in self.chromosomes} if keep_n_strata else None
         self.full_maps = None
-        
-        
+        self.similarity_method=None
+        self.distance=None
         
 
         res_adjust = kwargs.pop('adjust_resolution', True)
@@ -89,7 +89,7 @@ class scHiCs:
                     map_filter=map_filter, sparse=sparse, gzip=gzip,
                     keep_n_strata=keep_n_strata, operations=operations,
                     **kwargs)
-
+                
                 self.contacts[idx]+=np.sum(mat)/2+ np.trace(mat)/2
 
                 self.short_range[idx]+=sum([np.sum(mat[i,i:i+int(2000000/self.resolution)]) for i in range(len(mat))])
@@ -186,10 +186,12 @@ class scHiCs:
         self.mitotic=self.mitotic[selected]
         if self.strata is not None:
             for ch in self.chromosomes:
-                self.strata[ch]=self.strata[ch][selected]
+                self.strata[ch]=[self.strata[ch][i] for i in selected]
         if self.full_maps is not None:
             for ch in self.chromosomes:
-                self.full_maps[ch]=self.full_maps[ch][selected]
+                self.full_maps[ch]=[self.full_maps[ch][i] for i in selected]
+        if self.distance is not None:
+            self.distance=self.distance[:,selected,:][:,:,selected]
             
         return files[selected]
 
@@ -270,37 +272,39 @@ class scHiCs:
             embeddings numpy.array: (shape: num_of_cells * dimension),
             distance_matrix numpy.array: (shape: num_of_cells * num_of_cells)
         """
-        distance_matrices = []
-        assert embedding_method.lower() in ['mds', 'tsne', 'umap', 'phate', 'spectral_embedding']
-        assert n_strata is not None or self.keep_n_strata is not None
-        n_strata = n_strata if n_strata is not None else self.keep_n_strata
-        new_strata = self.cal_strata(n_strata)
-        if print_time:
-            time1=0
-            time2=0
-            for ch in self.chromosomes:
-                print(ch)
-                distance_mat,t1,t2 = pairwise_distances(new_strata[ch], similarity_method, print_time, kwargs.pop('sigma',.5), kwargs.pop('window_size',10))
-                time1=time1+t1
-                time2=time2+t2
-                distance_matrices.append(distance_mat)
-            print('Sum of time 1:', time1)
-            print('Sum of time 2:', time2)
-        else:
-            for ch in self.chromosomes:
-                print(ch)
-                distance_mat = pairwise_distances(new_strata[ch],
+        if self.distance is None or self.similarity_method!=similarity_method:
+            self.similarity_method=similarity_method
+            distance_matrices = []
+            assert embedding_method.lower() in ['mds', 'tsne', 'umap', 'phate', 'spectral_embedding']
+            assert n_strata is not None or self.keep_n_strata is not None
+            n_strata = n_strata if n_strata is not None else self.keep_n_strata
+            new_strata = self.cal_strata(n_strata)
+            if print_time:
+                time1=0
+                time2=0
+                for ch in self.chromosomes:
+                    print(ch)
+                    distance_mat,t1,t2 = pairwise_distances(new_strata[ch], similarity_method, print_time, kwargs.pop('sigma',.5), kwargs.pop('window_size',10))
+                    time1=time1+t1
+                    time2=time2+t2
+                    distance_matrices.append(distance_mat)
+                print('Sum of time 1:', time1)
+                print('Sum of time 2:', time2)
+            else:
+                for ch in self.chromosomes:
+                    print(ch)
+                    distance_mat = pairwise_distances(new_strata[ch],
                                    similarity_method,
                                    print_time,
                                    kwargs.get('sigma',.5),
                                    kwargs.get('window_size',10))
-                distance_matrices.append(distance_mat)
-        distance_matrices = np.array(distance_matrices)
+                    distance_matrices.append(distance_mat)
+            self.distance = np.array(distance_matrices)
 
         if aggregation == 'mean':
-            final_distance = np.mean(distance_matrices, axis=0)
+            final_distance = np.mean(self.distance, axis=0)
         elif aggregation == 'median':
-            final_distance = np.median(distance_matrices, axis=0)
+            final_distance = np.median(self.distance, axis=0)
         else:
             raise ValueError('Aggregation method {0} not supported. Only "mean" or "median".'.format(aggregation))
 
@@ -387,26 +391,27 @@ class scHiCs:
         label : numpy.array
             An array of cell labels clustered.
         """
+        if self.distance is None or self.similarity_method!=similarity_method:
+            self.similarity_method=similarity_method
+            distance_matrices = []
+            assert n_strata is not None or self.keep_n_strata is not None
+            n_strata = n_strata if n_strata is not None else self.keep_n_strata
+            new_strata = self.cal_strata(n_strata)
 
-        distance_matrices = []
-        assert n_strata is not None or self.keep_n_strata is not None
-        n_strata = n_strata if n_strata is not None else self.keep_n_strata
-        new_strata = self.cal_strata(n_strata)
-
-        for ch in self.chromosomes:
-            print(ch)
-            distance_mat = pairwise_distances(new_strata[ch],
+            for ch in self.chromosomes:
+                print(ch)
+                distance_mat = pairwise_distances(new_strata[ch],
                                               similarity_method,
                                               print_time,
                                               kwargs.get('sigma',.5),
                                               kwargs.get('window_size',10))
-            distance_matrices.append(distance_mat)
-        distance_matrices = np.array(distance_matrices)
+                distance_matrices.append(distance_mat)
+            self.distance = np.array(distance_matrices)
 
         if aggregation == 'mean':
-            final_distance = np.mean(distance_matrices, axis=0)
+            final_distance = np.mean(self.distance, axis=0)
         elif aggregation == 'median':
-            final_distance = np.median(distance_matrices, axis=0)
+            final_distance = np.median(self.distance, axis=0)
         else:
             raise ValueError('Aggregation method {0} not supported. Only "mean" or "median".'.format(aggregation))
 
