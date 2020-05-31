@@ -247,13 +247,13 @@ def dump(cool_uri, resolution, table='pixels', columns=None, header=False, na_re
         h5 = c.open("r")
         if range:
             i0, i1 = region_to_extent(
-                h5, c._chromids, parse_region(range, c.chromsizes), binsize=c.binsize
-            )
+                h5, c._chromids, parse_region(range[3:], c.chromsizes), binsize=c.binsize
+            ) #??
             if range2 is not None:
                 j0, j1 = region_to_extent(
                     h5,
                     c._chromids,
-                    parse_region(range2, c.chromsizes),
+                    parse_region(range2[3:], c.chromsizes), #??
                     binsize=c.binsize,
                 )
             else:
@@ -303,9 +303,11 @@ def dump(cool_uri, resolution, table='pixels', columns=None, header=False, na_re
         float_format = "%" + float_format
 
     for chunk in chunks:
-        # print(chunk.head(20))
+        
         for idx, row in chunk.iterrows():
-            yield row.loc['bin1_id'], row.loc['bin2_id'], row.loc['count']
+            if row.loc['bin1_id']<=row.loc['bin2_id']:
+                yield row.loc['bin1_id'], row.loc['bin2_id'], row.loc['count']
+            
             # break
     #     if first:
     #         if header:
@@ -327,4 +329,4 @@ def dump(cool_uri, resolution, table='pixels', columns=None, header=False, na_re
     #     f.flush()
 
 
-# dump('test.mcool::resolutions/25000', 'pixels', 'test.txt', range='chr1', range2='chr1')
+# dump('test.mcool',25000, 'pixels', range='chr1', range2='chr1')
