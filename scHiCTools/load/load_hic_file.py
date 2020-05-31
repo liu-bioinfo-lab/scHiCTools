@@ -165,7 +165,7 @@ def load_HiC(file, genome_length, format=None, custom_format=None, header=0, chr
         if format in ['hic', '.hic']:
             gen = straw('NONE', file, chromosome, chromosome, 'BP', resolution)
         elif format in ['mcool', 'cool', '.cool', '.mcool']:
-            gen = dump(file, range=chromosome, range2=chromosome, resolution=resolution, header=header > 0)
+            gen = dump(file, resolution=resolution, range=chromosome, range2=chromosome, header=header > 0)
 
         # text files
         elif format == 'shortest':
@@ -219,14 +219,19 @@ def load_HiC(file, genome_length, format=None, custom_format=None, header=0, chr
         mat = np.zeros((size, size))
         count = 0
         for p1, p2, val in gen:
+            if count==0: #?
+                p1_m=p1#?
+                p2_m=p2#?
             count += 1
+            p1-=p1_m#?
+            p2-=p2_m#?
             if count % 100000 == 0:
                 print('Line: ', count)
             # print(chromosome, p1, p2, val)
             mat[p1, p2] += val
             if p1 != p2:
                 mat[p2, p1] += val
-
+        
     if operations is not None:
         mat = matrix_operation(mat, operations, **kwargs)
 
