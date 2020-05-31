@@ -102,14 +102,14 @@ def readHeader(req, chr1, chr2, posilist):
       length = struct.unpack('<i', req.read(4))[0]
 
       if name == chr1:
-          print(name, ': ', length)
+          # print(name, ': ', length)
           found1 = True
           chr1ind = i
           if (posilist[0] == -100):
               posilist[0] = 0
               posilist[1] = length
       if name == chr2:
-          print(name, ': ', length)
+          # print(name, ': ', length)
           found2 = True
           chr2ind = i
           if (posilist[2] == -100):
