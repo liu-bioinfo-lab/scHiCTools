@@ -17,17 +17,14 @@ sys.path.insert(0, os.path.abspath(
     os.path.join(os.path.dirname(__file__), '.')))
 
 def test():
-    y = scHiCs(['data/cell_03','data/cell_01','data/cell_02'],
-           reference_genome='mm9',
-           resolution=500000,
-           max_distance=4000000,
-           format='shortest_score',
-           adjust_resolution=False,
-           chromosomes='ecept Y',
-           operations=['convolution'],
-           kernel_shape=3, keep_n_strata=10,
-           store_full_map=True
-           )
+
+    y = scHiCs(['data/cell_03','data/cell_01','data/cell_02','data/cell_04','data/cell_05'],
+                reference_genome='mm9', resolution=2500000,
+                max_distance=4000000, format='shortest_score',
+                adjust_resolution=True, chromosomes='except Y',
+                operations=['convolution'], kernel_shape=3, keep_n_strata=10,
+                store_full_map=True)
+
     
     emb1 = y.learn_embedding(similarity_method='innerproduct',
                          return_distance=True,
@@ -89,22 +86,22 @@ def test():
     assert len(set(label1))==2
     assert len(set(label2))==2
     assert len(set(hicluster[1]))==2
-    assert emb1[0].shape==(3,2)
-    assert emb1[1].shape==(3,3)
-    assert emb2[0].shape==(3,2)
-    assert emb2[1].shape==(3,3)
-    assert emb3[0].shape==(3,2)
-    assert emb3[1].shape==(3,3)
-    assert emb4[0].shape==(3,2)
-    assert emb4[1].shape==(3,3)
-    assert emb5[0].shape==(3,2)
-    assert emb5[1].shape==(3,3)
-    # assert emb6[0].shape==(3,2)
-    # assert emb6[1].shape==(3,3)
-    assert emb7[0].shape==(3,2)
-    assert emb7[1].shape==(3,3)
-    assert emb8[0].shape==(3,2)
-    assert emb8[1].shape==(3,3)
+    assert emb1[0].shape==(5,2)
+    assert emb1[1].shape==(5,5)
+    assert emb2[0].shape==(5,2)
+    assert emb2[1].shape==(5,5)
+    assert emb3[0].shape==(5,2)
+    assert emb3[1].shape==(5,5)
+    assert emb4[0].shape==(5,2)
+    assert emb4[1].shape==(5,5)
+    assert emb5[0].shape==(5,2)
+    assert emb5[1].shape==(5,5)
+    # assert emb6[0].shape==(5,2)
+    # assert emb6[1].shape==(5,5)
+    assert emb7[0].shape==(5,2)
+    assert emb7[1].shape==(5,5)
+    assert emb8[0].shape==(5,2)
+    assert emb8[1].shape==(5,5)
     
     plt.figure()
     plt.subplot(1,2,1)
