@@ -20,19 +20,34 @@ def kmeans(data,
            iteration=1000,
            **kwargs):
     """
-    This function is a impliment of K-Means algorithm.
-
-    Input:
-        data: a numpy array, every row represent a point.
-        k: number of clusters.
-        weights: list of the weight of every point, should either be 'None' or
-                have the length same as the number of rows in data.
-            
-
-    Output:
-        a list of the label of every point.
-    """
+    k-means algorithm, with k-means++ to initialize the start points.
     
+
+    Parameters
+    ----------
+    data : numpy.ndarray
+        Coordiante of points.
+        
+    k : int, optional
+        Number of clusters.
+        The default is 4.
+        
+    weights : list, optional
+        List of the weight of every point,
+        should either be 'None' or have the length same as the number of rows in data. 
+        The default is None.
+        
+    iteration : int, optional
+        Number of iterations in k-means algorithm.
+        The default is 1000.
+    
+
+    Returns
+    -------
+    label : numpy.ndarray
+        A list of the label of every point.
+
+    """
     
     # kmeans++
     data=np.array(data)
@@ -43,6 +58,7 @@ def kmeans(data,
     for i in range(k):
         cen[i]=int(np.random.choice(index,size=1,p=p))
         p=np.array([np.linalg.norm(data-data[cen[j]],axis=1) for j in np.arange(i+1)]).min(axis=0)
+        print('p:',p)
         p=p/sum(p)
     centroids=data[cen]
     
@@ -66,6 +82,7 @@ def kmeans(data,
 
         # renew centroids
         if weights is not None:
+            weights=np.array(weights)
             for j in range(k):
                 group=data[label==j,:]
                 centroids[j]=np.average(group, axis=0,weights=weights[label==j])
@@ -74,7 +91,7 @@ def kmeans(data,
                 group=data[label==j,:]
                 centroids[j]=np.average(group, axis=0)
 
-    return(label)
+    return label
 
 
 
@@ -84,21 +101,38 @@ def spectral_clustering(data,
                         n_clusters=4,
                         normalize=True,
                         **kwargs):
-
     """
     This function is a impliment of unnormalized spectral clustering.
     Reference: "A Tutorial on Spectral Clustering" by Ulrike von Luxburg.
+    
 
-    Input:
-        data: a numpy array,
-            can either be a matrix which every row represent a point
-            or a distance matrix.
-        data_type: specify the type of data input. 
-                    Must be in either 'points' or 'distance_matrix'.
-        n_clusters: number of clusters.
-        normalize: Whether to use unnormalized or normalized spectral clustering.
-    Output:
-        a list of the label of the data points.
+    Parameters
+    ----------
+    data : numpy.ndarray
+        Distance matrix or coordinate of the points.
+        
+    data_type : str, optional
+        Format of argument `data`, specify the type of data input. 
+        Must be in either 'points' or 'distance_matrix'.
+        The default is 'points'.
+        
+    n_clusters : int, optional
+        Number of clusters.
+        The default is 4.
+        
+    normalize : bool, optional
+        Whether to use unnormalized or normalized spectral clustering.
+        The default is True.
+        
+    **kwargs :
+        Arguments pass to kmeans.
+
+
+    Returns
+    -------
+    label : numpy.ndarray
+        A list of the label of every point.
+
     """
 
     # compute graph similarity matrix
@@ -152,7 +186,7 @@ def spectral_clustering(data,
     # Clustering using k-means
     label=kmeans(U,k=n_clusters,**kwargs)
 
-    return(label)
+    return label
 
 
 
@@ -164,22 +198,37 @@ def HAC(data,
         data_type='points',
         n_clusters=4,
         method='centroid'):
-
     """
     This function is a impliment of hierarchical afflomerative clustering.
-    Reference: Christopher D. Manning, Prabhakar Raghavan and Hinrich Schütze,
-            "Introduction to Information Retrieval" chapter 17
+    Reference: 
+        Christopher D. Manning, Prabhakar Raghavan and Hinrich Schütze,
+        "Introduction to Information Retrieval" chapter 17
+    
 
-    Input:
-        data: a numpy array,
-            can either be a matrix which every row represent a point
-            or a graph similarity matrix.
-        n_clusters: number of clusters.
-        method: now support 'single-link', 'complete-link',
-                    'centroid','group-average'.
+    Parameters
+    ----------
+    data : numpy.ndarray
+        Distance matrix or coordinate of the points.
+    
+    data_type : str, optional
+        Format of argument `data`, specify the type of data input. 
+        Must be in either 'points' or 'distance_matrix'.
+        The default is 'points'.
+        
+    n_clusters : int, optional
+        Number of clusters.
+        The default is 4.
+        
+    method : str, optional
+        Specify the hierarchical clustering method used.
+        Now support 'single-link', 'complete-link', 'centroid','group-average'.
+        The default is 'centroid'.
 
-    Output:
-        a list of the label of the data points.
+
+    Returns
+    -------
+    label : numpy.ndarray
+        A list of the label of every point.
 
     """
 
@@ -284,4 +333,4 @@ def HAC(data,
         raise ValueError('Method is not supported.')
 
 
-    return(label)
+    return label
