@@ -10,7 +10,7 @@ sys.path.insert(0, os.path.abspath(
     os.path.join(
         os.path.dirname(__file__), '../scHiCTools/embedding')))
 
-from embedding import PCA, MDS, tSNE, SpectralEmbedding, UMAP, PHATE
+from embedding import PCA, MDS, tSNE, SpectralEmbedding, PHATE # , UMAP
 
 rand_data = np.random.normal(size=(60,5))
 dist_mat = distance.squareform(distance.pdist(rand_data))
@@ -48,12 +48,12 @@ def test_SpectralEmbedding():
     assert not np.any(np.isinf(emb))
     
     
-def test_UMAP():
-    emb = UMAP(dist_mat, dim=dim)
-    assert len(emb[0])==dim
-    assert len(emb)==len(dist_mat)
-    assert not np.any(np.isnan(emb))
-    assert not np.any(np.isinf(emb))
+# def test_UMAP():
+#     emb = UMAP(dist_mat, dim=dim)
+#     assert len(emb[0])==dim
+#     assert len(emb)==len(dist_mat)
+#     assert not np.any(np.isnan(emb))
+#     assert not np.any(np.isinf(emb))
     
     
 def test_PHATE():
