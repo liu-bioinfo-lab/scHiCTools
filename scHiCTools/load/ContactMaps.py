@@ -6,7 +6,7 @@ from scipy.sparse import coo_matrix
 from .load_hic_file import get_chromosome_lengths, load_HiC
 from ..embedding import pairwise_distances, MDS, tSNE, PHATE, SpectralEmbedding, PCA
 from .processing_utils import matrix_operation
-from ..analysis import scatter
+# from ..analysis import scatter
 from ..analysis import kmeans, spectral_clustering, HAC
 import matplotlib.pyplot as plt
 
