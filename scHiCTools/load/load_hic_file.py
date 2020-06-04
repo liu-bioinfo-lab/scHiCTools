@@ -14,7 +14,7 @@ from .processing_utils import matrix_operation
 my_path = os.path.abspath(os.path.dirname(__file__))
 
 
-def get_chromosome_lengths(ref, chromosomes, res=1, **kwargs):
+def get_chromosome_lengths(ref, chromosomes, res=1):
     """
     Get lengths for all chromosomes in a given resolution according to the reference genome.
 
@@ -23,8 +23,8 @@ def get_chromosome_lengths(ref, chromosomes, res=1, **kwargs):
         res (int): resolution
         chromosomes (str): 'All', 'except X', 'except Y' or a list of chromosomes like ['chr1', 'chr2']
 
-    Return
-        chromosomes (set):
+    Returns:
+        chromosomes (set): 
         lengths (dict): eg. {'chr1': 395, 'chr2': 390, ...}
     """
     def _res_change(length, res):
@@ -66,19 +66,29 @@ def get_chromosome_lengths(ref, chromosomes, res=1, **kwargs):
     return chromosomes, lengths
 
 
-def file_line_generator(file, chrom=None, header=0, format=None, resolution=1,
+def file_line_generator(file, format=None, chrom=None, header=0, resolution=1,
                         resolution_adjust=True, mapping_filter=0., gzip=False):
     """
     For formats other than .hic and .mcool
 
     Args:
-        file (str): file path
-        chrom (str): chromosome to extract
-        header (None or int):  whether to skip header (1 line)
-        format (int or list): format 1) [chr1 pos1 chr2 pos2 mapq1 mapq2] 2) [chr1 pos1 chr2 pos2 score] 3) [chr1 pos1 chr2 pos2]
-        mapping_filter (float): the threshold to filter some reads by map quality
+        file (str): File path.
+        
+        format (int or list): Format 
+            1) [chr1 pos1 chr2 pos2 mapq1 mapq2];
+            2) [chr1 pos1 chr2 pos2 score];
+            3) [chr1 pos1 chr2 pos2].
+    
+        chrom (str): Chromosome to extract.
+        
+        header (None or int): Whether to skip header (1 line).
+    
+        mapping_filter (float): The threshold to filter some reads by map quality.
+        
 
-    No return value. Yield a line each time in the format of (position_1, position_2, contact_reads).
+    Returns:
+        No return value.
+        Yield a line each time in the format of (position_1, position_2, contact_reads).
     """
 
     f = gopen(file) if gzip else open(file)
@@ -119,24 +129,25 @@ def file_line_generator(file, chrom=None, header=0, format=None, resolution=1,
     f.close()
 
 
-def load_HiC(file, genome_length, format=None, custom_format=None, header=0, chromosome=None,
-             resolution=10000, resolution_adjust=True, map_filter=0., sparse=False, gzip=False,
+def load_HiC(file, genome_length, format=None, custom_format=None, 
+             header=0, chromosome=None, resolution=10000,
+             resolution_adjust=True, map_filter=0., sparse=False, gzip=False,
              keep_n_strata=False, operations=None, **kwargs):
     """
     Load HiC contact map into a matrix
     Args:
-        file (str):
-        genome_length (dict):
-        format (str):
-        custom_format (int or list): if the format is not in our provided list
-        header (int):  how many header lines to skip
-        chromosome (str):
-        resolution (int):
-        resolution_adjust (bool): in some situations, the input file is already pre-processed, and we don't need to adjust resolution again.
-        map_filter (float): the threshold to filter some reads by map quality
-        sparse (bool): whether store in sparse matrices
-        gzip (bool):
-        keep_n_strata (int or None):
+        file (str): File path.
+        genome_length (dict): The length of each genome.
+        format (str): Now support .txt, .hic, and .mcool file.
+        custom_format (int or list): If the format is not in our provided list.
+        header (int): How many header lines to skip.
+        chromosome (str): Specify the chromosome.
+        resolution (int): Resolution.
+        resolution_adjust (bool): In some situations, the input file is already pre-processed, and we don't need to adjust resolution again.
+        map_filter (float): The threshold to filter some reads by map quality
+        sparse (bool): Whether store in sparse matrices
+        gzip (bool): Whether the file is zipped.
+        keep_n_strata (int or None): Number of strata to keep.
 
     Return:
         Numpy.array: loaded contact map
@@ -170,38 +181,43 @@ def load_HiC(file, genome_length, format=None, custom_format=None, header=0, chr
         # text files
         elif format == 'shortest':
             gen = file_line_generator(
-                file, chrom=chromosome, header=0, format=[1, 2, 3, 4], gzip=gzip,
+                file, format=[1, 2, 3, 4], chrom=chromosome, header=0, gzip=gzip,
                 resolution=resolution, resolution_adjust=resolution_adjust, mapping_filter=0
             )
         elif format == 'shortest_score':
             gen = file_line_generator(
-                file, chrom=chromosome, header=0, format=[1, 2, 3, 4, 5], gzip=gzip,
+                file, format=[1, 2, 3, 4, 5], chrom=chromosome, header=0, gzip=gzip,
                 resolution=resolution, resolution_adjust=resolution_adjust, mapping_filter=0
             )
         elif format == 'short':
             gen = file_line_generator(
-                file, chrom=chromosome, header=0, format=[2, 3, 6, 7], gzip=gzip,
+                file, format=[2, 3, 6, 7], chrom=chromosome, header=0, gzip=gzip,
                 resolution=resolution, resolution_adjust=resolution_adjust, mapping_filter=0
             )
         elif format == 'short_score':
             gen = file_line_generator(
-                file, chrom=chromosome, header=0, format=[2, 3, 6, 7, 9], gzip=gzip,
+                file, format=[2, 3, 6, 7, 9], chrom=chromosome, header=0, gzip=gzip,
                 resolution=resolution, resolution_adjust=resolution_adjust, mapping_filter=0
             )
         elif format == 'medium':
             gen = file_line_generator(
-                file, chrom=chromosome, header=0, format=[3, 4, 7, 8, 10, 11], gzip=gzip,
-                resolution=resolution, resolution_adjust=resolution_adjust, mapping_filter=map_filter
+                file, format=[3, 4, 7, 8, 10, 11], chrom=chromosome, 
+                header=0, gzip=gzip, resolution=resolution,
+                resolution_adjust=resolution_adjust,
+                mapping_filter=map_filter
             )
         elif format == 'long':
             gen = file_line_generator(
-                file, chrom=chromosome, header=0, format=[2, 3, 6, 7, 9, 12], gzip=gzip,
-                resolution=resolution, resolution_adjust=resolution_adjust, mapping_filter=map_filter
+                file, format=[2, 3, 6, 7, 9, 12], chrom=chromosome, header=0,
+                gzip=gzip, resolution=resolution,
+                resolution_adjust=resolution_adjust,
+                mapping_filter=map_filter
             )
         elif format == '4dn':
             gen = file_line_generator(
-                file, chrom=chromosome, header=2, format=[2, 3, 4, 5], gzip=gzip,
-                resolution=resolution, resolution_adjust=resolution_adjust, mapping_filter=0
+                file, format=[2, 3, 4, 5], chrom=chromosome, header=2,
+                gzip=gzip, resolution=resolution,
+                resolution_adjust=resolution_adjust, mapping_filter=0
             )
         elif format is None or format == 'customized':
             if custom_format is None:
@@ -210,8 +226,10 @@ def load_HiC(file, genome_length, format=None, custom_format=None, header=0, chr
                 if isinstance(custom_format, int):
                     custom_format = [int(elm) for elm in str(custom_format)]
                 gen = file_line_generator(
-                    file, header=header, chrom=chromosome, format=custom_format, gzip=gzip,
-                    resolution=resolution, resolution_adjust=resolution_adjust, mapping_filter=map_filter
+                    file, format=custom_format, header=header,
+                    chrom=chromosome, gzip=gzip, resolution=resolution,
+                    resolution_adjust=resolution_adjust,
+                    mapping_filter=map_filter
                 )
         else:
             raise ValueError('Unrecognized format: ' + format)
