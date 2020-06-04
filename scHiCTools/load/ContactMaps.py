@@ -4,7 +4,7 @@ import pandas as pd
 from copy import deepcopy
 from scipy.sparse import coo_matrix
 from .load_hic_file import get_chromosome_lengths, load_HiC
-from ..embedding import pairwise_distances, MDS, tSNE, UMAP, PHATE, SpectralEmbedding, PCA
+from ..embedding import pairwise_distances, MDS, tSNE, PHATE, SpectralEmbedding, PCA
 from .processing_utils import matrix_operation
 from ..analysis import scatter
 from ..analysis import kmeans, spectral_clustering, HAC
@@ -12,37 +12,95 @@ import matplotlib.pyplot as plt
 
 
 class scHiCs:
-    def __init__(self, list_of_files, reference_genome, resolution, sparse=False, chromosomes='all',
+    def __init__(self, list_of_files, reference_genome, resolution,
+                 adjust_resolution=True, sparse=False, chromosomes='all',
                  format='customized', keep_n_strata=10, store_full_map=False,
-                 operations=None, **kwargs):
+                 operations=None, header=0, customized_format=None,
+                 map_filter=0., gzip=False, **kwargs):
         """
-        Args:
-            list_of_files (list): list of HiC file paths
-            reference genome (str or dict): now supporting 'mm9', 'mm10', 'hg19', 'hg38', if using other references,
-            you can simply provide the chromosome name and corresponding size (bp) with a dictionary in Python.
+
+        Parameters
+        ----------
+        list_of_files : list
+            List of HiC file paths.
+            
+        reference_genome : str or dict
+            Now supporting 'mm9', 'mm10', 'hg19', 'hg38',
+            if using other references,you can simply provide the chromosome name 
+            and corresponding size (bp) with a dictionary in Python.
             e.g. {'chr1': 150000000, 'chr2': 130000000, 'chr3': 200000000}
-            resolution (int): resolution: the resolution to separate genome into bins. If using .hic file format,
+            
+        resolution : int
+            The resolution to separate genome into bins. If using .hic file format,
             the given resolution must match with the resolutions in .hic file.
-            sparse (bool): whether to use sparse matrix to store (only effective when max_distance=None), default: False
-            format (str): e.g., '.hic', 'customized', '.cool', default: 'customized'
-            customized_format (int or list): format for each line (see README)
-            chromosomes (list or str): chromosomes to use, eg. ['chr1', 'chr2'], or just 'except Y', 'except XY',
-            'all', default: 'all', which means chr 1-19 + XY for mouse and chr 1-22 + XY for human
-            adjust_resolution (bool): whether to adjust resolution for input file. Sometimes the input file is
-            already in the proper resolution (e.g. position 3000000 has already been changed to 6 in 500kb resolution),
-            then you can set adjust_resolution=False. Default: True
-            keep_n_strata (None or int): only consider contacts within this genomic distance, default: None.
-            If 'None', it will store full matrices in numpy matrix or scipy sparse format,
-            which will use too much memory sometimes
-            store_full_map (bool): whether store all contact maps
-            operations (None or list): the methods use for pre-processing or smoothing the maps given in a list.
-            The operations will happen in the given order. Operations: 'reduce_sparsity', 'convolution',
-            'random_walk', 'network_enhancing'. Default: None.
+            
+        adjust_resolution : bool, optional
+            Whether to adjust resolution for input file. 
+            Sometimes the input file is already in the proper resolution
+            (e.g. position 3000000 has already been changed to 6 in 500kb resolution),
+            then you can set `adjust_resolution=False`.  The default is True.
+            
+        sparse : bool, optional
+            Whether to use sparse matrix to store (only effective when max_distance=None). The default is False.
+            
+        chromosomes : list or str, optional
+            Chromosomes to use, 
+            eg. ['chr1', 'chr2'], or just 'except Y', 'except XY','all',
+            which means chr 1-19 + XY for mouse and chr 1-22 + XY for human.
+            The default is 'all'.
+            
+        format : str, optional
+            HiC files' format.
+            e.g., '.hic', 'customized', '.cool'. The default is 'customized'.
+            
+        keep_n_strata : int, optional
+            Only consider contacts within this genomic distance. 
+            If `None`, it will store full matrices in numpy matrix or 
+            scipy sparse format, which will use too much memory sometimes.
+            The default is 10.
+            
+        store_full_map : bool, optional
+            Whether store contact maps. The default is False.
+            
+        operations : list, optional
+            The methods use for pre-processing or smoothing the maps given in a list.
+            The operations will happen in the given order. 
+            Operations: 'convolution', 'random_walk', 'network_enhancing'.
             For pre-processing and smoothing operations, sometimes you need additional arguments.
-            You can check docstrings for pre-processing and smoothing for more information.
+            You can check docstrings for pre-processing and smoothing for more information. 
+            The default is None.
+        
+        header : int, optional
+            The number of header line(s). 
+            If `header=0`, HiC files do not have header.
+            The default is 0.
+            
+        customized_format : int or list, optional
+            Format for each line. The default is None.
+            
+        map_filter : float, optional
+            The threshold to filter some reads by map quality. 
+            The default is 0..
+            
+        gzip : bool, optional
+            If the HiC files are zip files. 
+            If `True`, the HiC files are zip files. 
+            The default is False.
+            
+        **kwargs : 
+            Other arguments specify smoothing methods passed to function.
+            See `scHiCTools.load.processing_utils.matrix_operation` function.
+
+
+        Returns
+        -------
+        None.
+        
+
         """
+
         self.resolution = resolution
-        self.chromosomes, self.chromosome_lengths = get_chromosome_lengths(reference_genome, chromosomes, resolution, **kwargs)
+        self.chromosomes, self.chromosome_lengths = get_chromosome_lengths(reference_genome, chromosomes, resolution if adjust_resolution else 1)
         self.num_of_cells = len(list_of_files)
         self.sparse = sparse
         self.keep_n_strata = keep_n_strata
@@ -56,17 +114,9 @@ class scHiCs:
         self.full_maps = None
         self.similarity_method=None
         self.distance=None
-        
-
-        res_adjust = kwargs.pop('adjust_resolution', True)
-        header = kwargs.pop('header', 0)
-        custom_format = kwargs.pop('customized_format', None)
-        map_filter = kwargs.pop('map_filter', 0.)
-        gzip = kwargs.pop('gzip', False)
 
         assert keep_n_strata is not None or store_full_map is True
 
-        
         if not store_full_map:
             self.full_maps = None
         elif sparse:
@@ -83,9 +133,10 @@ class scHiCs:
                 if ('ch' in ch) and ('chr' not in ch):
                     ch=ch.replace("ch", "chr")
                 mat, strata = load_HiC(
-                    file, genome_length=self.chromosome_lengths, format=format,
-                    custom_format=custom_format, header=header,
-                    chromosome=ch, resolution=resolution, resolution_adjust=res_adjust,
+                    file, genome_length=self.chromosome_lengths,
+                    format=format, custom_format=customized_format,
+                    header=header, chromosome=ch, resolution=resolution,
+                    resolution_adjust=adjust_resolution,
                     map_filter=map_filter, sparse=sparse, gzip=gzip,
                     keep_n_strata=keep_n_strata, operations=operations,
                     **kwargs)
@@ -106,6 +157,23 @@ class scHiCs:
                         self.strata[ch][strata_idx][idx, :] = stratum
 
     def cal_strata(self, n_strata):
+        """
+        
+        Alter the number of strata kept in a `scHiCs` object.
+        
+        
+        Parameters
+        ----------
+        n_strata : int
+            Number of strata to keep.
+
+        Returns
+        -------
+        dict
+            Strata of cells.
+
+        """
+        
         if self.full_maps is None:
             if self.keep_n_strata <= n_strata:
                 print(' Only {0} strata are kept!'.format(self.keep_n_strata))
@@ -134,8 +202,32 @@ class scHiCs:
                         for i in range(self.keep_n_strata, n_strata):
                             self.strata[ch][i][idx, :] = np.diag(fmap[i:, :-i])
                 return deepcopy(self.strata)
+            
+            
 
     def processing(self, operations, **kwargs):
+        """
+        
+        Apply a smoothing method to contact maps.
+        Requre the `scHiCs` object to store the full map of contacts maps.
+        
+
+        Parameters
+        ----------
+        operations : str
+            The methods use for smoothing the maps.
+            Avaliable operations: 'convolution', 'random_walk', 'network_enhancing'.
+            
+        **kwargs : 
+            Other arguments specify smoothing methods passed to function.
+            
+
+        Returns
+        -------
+        None.
+
+        """
+        
         if self.full_maps is None:
             raise ValueError('No full maps stored. Processing is not doable.')
         if self.sparse:
@@ -154,8 +246,45 @@ class scHiCs:
                         self.strata[ch][j][i, :] = np.diag(mat[j:, :len(mat) - j])
 
 
+
     def plot_contacts(self, hist=True, percent=True, 
-                      size=1, bins=10, color='#1f77b4'):
+                      size=1.0, bins=10, color='#1f77b4'):
+        """
+        
+        Generate two plots:
+        Histogram of contacts and 
+        scatter plot of short-range contacts v.s. contacts at the mitotic band.
+        
+
+        Parameters
+        ----------
+        hist : bool, optional
+            Whether to plot Histogram of contacts. 
+            If `True`, plot Histogram of contacts. 
+            The default is True.
+            
+        percent : int, optional
+            Whether to plot scatter plot of short-range contacts v.s. contacts at the mitotic band.
+            If `True`, plot scatter plot of short-range contacts v.s. contacts at the mitotic band.
+            The default is True.
+            
+        size : float, optional
+            The point size of scatter plot.
+            The default is 1.0.
+            
+        bins : int, optional
+            Number of bins in histogram.
+            The default is 10.
+            
+        color : str, optional
+            The color of the plot.
+            The default is '#1f77b4'.
+
+        Returns
+        -------
+        None.
+
+        """
 
         if hist:
             if percent:
@@ -176,11 +305,35 @@ class scHiCs:
             plt.title('Short-range contacts v.s. contacts at the mitotic band')
 
 
+
     def select_cells(self, min_n_contacts=0,max_short_range_contact=1):
+        """
+        
+        Select qualify cells based on minimum number of contacts and
+        maxium percent of short range contact.
+        
+
+        Parameters
+        ----------
+        min_n_contacts : int, optional
+            The threshold of minimum number of contacts in each cell.
+            The default is 0.
+            
+        max_short_range_contact : float, optional
+            The threshold of maximum proportion of short range contact in every cell.
+            The default is 1.
+
+        Returns
+        -------
+        list
+            Selected files.
+
+        """
+        
         files=np.array(self.files)
         selected=np.logical_and(self.short_range/self.contacts<=max_short_range_contact,self.contacts>=min_n_contacts)
         self.num_of_cells=sum(selected)
-        self.files=files[selected]
+        self.files=[self.files[i] for i in  range(len(files)) if selected[i]]
         self.contacts=self.contacts[selected]
         self.short_range=self.short_range[selected]
         self.mitotic=self.mitotic[selected]
@@ -200,26 +353,41 @@ class scHiCs:
     def scHiCluster(self,dim=2,n_clusters=4,cutoff=0.8,n_PCs=10,**kwargs):
 
         """
+        
+        Embedding and clustering single cells using HiCluster.
+        Reference: 
+            Zhou J, Ma J, Chen Y, Cheng C, Bao B, Peng J, et al.
+            Robust single-cell Hi-C clustering by convolution- and random-walk–based imputation.
+            PNAS. 2019 Jul 9;116(28):14011–8. 
+        
+        
         Parameters
         ----------
         dim : int, optional
             Number of dimension of embedding. The default is 2.
+            
         n_clusters : int, optional
             Number of clusters. The default is 4.
+            
         cutoff : float, optional
             The cutoff proportion to convert the real contact
             matrix into binary matrix. The default is 0.8.
+            
         n_PCs : int, optional
             Number of principal components. The default is 10.
+            
         **kwargs :
-            Other arguments passed to function.
+            Other arguments passed to kmeans.
+            See `scHiCTools.analysis.clustering.kmeans` function.
 
         Returns
         -------
-        embedding : numpy.array
-            Embedding of cells using HiCluster.
-        label : numpy.array
-            A array of cell labels clustered by HiCluster.
+        embeddings : numpy.ndarray
+            The embedding of cells using HiCluster.
+            
+        label : numpy.ndarray
+            An array of cell labels clustered by HiCluster.
+            
         """
 
         if self.full_maps is None:
@@ -253,25 +421,61 @@ class scHiCs:
                         dim=2, aggregation='median', n_strata=None, return_distance=False, print_time=False,
                         **kwargs):
         """
-        Learn a low-dimensional embedding for cells.
+        
+        Function to find a low-dimensional embedding for cells.
+        
 
-        Args:
-            similarity_method (str): 'inner_product', 'HiCRep' or 'Selfish'
-            embedding_method (str): 'MDS', 'tSNE', 'UMAP', 'phate', 'spectral_embedding'.
-            aggregation (str): 'mean' or 'median'
-            dim (int): dimension of the embedding
-            n_strata (int): only consider contacts within this genomic distance, default: None.
-            If it is None, it will use the all strata kept (the argument keep_n_strata) from previous loading process
-            return_distance (bool): if True, return (embeddings, distance_matrix); if False, only return embeddings
+        Parameters
+        ----------
+        similarity_method : str
+            The method used to calculate similarity matrix.
+            Now support 'inner_product', 'HiCRep' and 'Selfish'.
+            
+        embedding_method : str
+            The method used to project cells into lower-dimensional space.
+            Now support 'MDS', 'tSNE', 'phate', 'spectral_embedding'.
+            
+        dim : int, optional
+            Dimension of the embedding space.
+            The default is 2.
+            
+        aggregation : str, optional
+            Method to find the distance matrix based on distance matrices of chromesomes.
+            Must be 'mean' or 'median'.
+            The default is 'median'.
+            
+        n_strata : int, optional
+            Number of strata used in calculation.
+            The default is None.
+            
+        return_distance : bool, optional
+            Whether to return the distance matrix of cells.
+            If True, return (embeddings, distance_matrix);
+            if False, only return embeddings. 
+            The default is False.
+            
+        print_time : bool, optional
+            Whether to print process time. The default is False.
+            
+        **kwargs :
+            Including two arguments for Selfish
+            (see funciton `pairwise_distances`):\
+            `n_windows`: number of Selfish windows\
+            `sigma`: sigma in the Gaussian-like kernel\
+            and some arguments specify different embedding method 
+            (see functions in `scHiCTools.embedding.embedding`).
+            
 
-        Some additional argument for Selfish:
-            n_windows: number of Selfish windows
-            sigma: sigma in the Gaussian-like kernel
-
-        Return:
-            embeddings numpy.array: (shape: num_of_cells * dimension),
-            distance_matrix numpy.array: (shape: num_of_cells * num_of_cells)
+        Returns
+        -------
+        embeddings: numpy.ndarray
+            The embedding of cells in lower-dimensional space.
+        
+        final_distance: numpy.ndarray, optional
+            The pairwise distance calculated.
+        
         """
+        
         if self.distance is None or self.similarity_method!=similarity_method:
             self.similarity_method=similarity_method
             distance_matrices = []
@@ -284,7 +488,7 @@ class scHiCs:
                 time2=0
                 for ch in self.chromosomes:
                     print(ch)
-                    distance_mat,t1,t2 = pairwise_distances(new_strata[ch], similarity_method, print_time, kwargs.pop('sigma',.5), kwargs.pop('window_size',10))
+                    distance_mat,t1,t2 = pairwise_distances(new_strata[ch], similarity_method, print_time, kwargs.get('sigma',.5), kwargs.get('window_size',10))
                     time1=time1+t1
                     time2=time2+t2
                     distance_matrices.append(distance_mat)
@@ -341,18 +545,11 @@ class scHiCs:
             embeddings = SpectralEmbedding(graph, dim)
         else:
             raise ValueError('Embedding method {0} not supported. '.format(embedding_method))
-
-
-        if print_time:
-            if return_distance:
-                return embeddings, final_distance, time1, time2
-            else:
-                return embeddings, time1, time2
+            
+        if return_distance:
+            return embeddings, final_distance
         else:
-            if return_distance:
-                return embeddings, final_distance
-            else:
-                return embeddings
+            return embeddings
 
 
     def clustering(self,
@@ -364,32 +561,42 @@ class scHiCs:
                    print_time=False,
                    **kwargs):
         """
+        
         Parameters
         ----------
         n_clusters : int
             Number of clusters.
+            
         clustering_method : str
             Clustering method in 'kmeans', 'spectral_clustering' or 'HAC'(hierarchical agglomerative clustering).
+            
         similarity_method : str
             Reproducibility measure.
             Value in ‘InnerProduct’, ‘HiCRep’ or ‘Selfish’.
+            
         aggregation : str, optional
              Method to aggregate different chromosomes.
              Value is either 'mean' or 'median'.
              The default is 'median'.
+             
         n_strata : int or None, optional
             Only consider contacts within this genomic distance.
             If it is None, it will use the all strata kept from previous loading process.
             The default is None.
+            
         print_time : bool, optional
             Whether to print the processing time. The default is False.
+            
         **kwargs :
-            Other arguments passed to function.
+            Other arguments pass to function `scHiCTools.embedding.reproducibility.pairwise_distances `,
+            and the clustering function in `scHiCTools.analysis.clustering`.
+
 
         Returns
         -------
-        label : numpy.array
+        label : numpy.ndarray
             An array of cell labels clustered.
+            
         """
         if self.distance is None or self.similarity_method!=similarity_method:
             self.similarity_method=similarity_method
