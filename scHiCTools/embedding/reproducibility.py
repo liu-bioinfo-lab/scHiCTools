@@ -7,15 +7,42 @@ import scipy.spatial.distance as dis
 def pairwise_distances(all_strata, similarity_method,
                        print_time=False, sigma=.5, window_size=10):
     """
-    Args:
-        all_strata (numpy.array): [n_cells * n_bins, n_cells * (n_bins - 1), ...]
-        similarity_method (str): 'inner_product', 'HiCRep', 'Selfish'
-        window_size (int): length of every window used in Selfish, default: 10
-        sigma (float): value of sigma for the Gaussian kernel used in Selfish, default: 0.5
+    
+    Find the pairwise distace using different similarity method, 
+    and return a distance matrix.
+    
 
-    Return:
-         distance_mat (numpy.array)
+    Parameters
+    ----------
+    all_strata : numpy.ndarray
+        An array contained the strata of a specific chromesome for cells.
+        
+    similarity_method : str
+        The similarity method used to calculate distance matrix.
+        Now support 'innerproduct', 'hicrep', 'selfish'.
+        
+    print_time : bool, optional
+        Whether to return the run time of similarity.
+        The default is False.
+        
+    sigma : float, optional
+        Parameter for method 'Selfish'.
+        Sigma for the Gaussian kernel used in Selfish.
+        The default is .5.
+        
+    window_size : int, optional
+        Parameter for method 'Selfish'.
+        Length of every window used in Selfish.
+        The default is 10.
+        
+
+    Returns
+    -------
+    numpy.ndarray
+        Distance matrix.
+
     """
+    
     method = similarity_method.lower()
     t0 = time()
 
