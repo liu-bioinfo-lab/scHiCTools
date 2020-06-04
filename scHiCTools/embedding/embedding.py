@@ -1,4 +1,14 @@
 # -*- coding: utf-8 -*-
+"""
+
+ Embedding component of scHiCTools
+
+ Author: Xinjun Li
+
+ This script define functions to embedding single cell data to a lower-dimensional space.
+
+"""
+
 
 import numpy as np
 import scipy.optimize as opt
@@ -7,24 +17,32 @@ import scipy.spatial.distance as dis
 from scipy.optimize import curve_fit
 from scipy.spatial.distance import squareform
 
+
+
 # PCA :---------------------------------------------------
 
 def PCA(X, dim=2):
-    '''
+    """
+    
+    Principal components analysis，PCA.
+    
     
     Parameters
     ----------
-    X : numpy array
+    X : numpy.ndarray
         Coordinates of input data points.
+        
     dim : int, optional
-        The dimension of the projected points. The default is 2.
+        The dimension of the projected points. 
+        The default is 2.
+
 
     Returns
     -------
-    Y : numpy array
+    Y : numpy.ndarray
         Coordinates of the projected points.
 
-    '''
+    """
     
     X=X-np.mean(X,axis=0)
     U, S, V = np.linalg.svd(X, full_matrices=False, compute_uv=True)
@@ -37,21 +55,28 @@ def PCA(X, dim=2):
 # MDS :---------------------------------------------------
 
 def MDS(mat, n=2):
-    '''
+    """
+    Multidimensional scaling, MDS.
+    
 
     Parameters
     ----------
-    mat : numpy array
+    mat : numpy.ndarray
         Distance matrix of the data points.
+        
     n : int, optional
-        The dimension of the projected points. The default is 2.
+        The dimension of the projected points. 
+        The default is 2.
+
 
     Returns
     -------
-    co : numpy array
+    co : numpy.ndarray
         Coordinates of the projected points.
 
-    '''
+    """
+    
+    
     # mat = np.sqrt(2 - 2 * mat)
     h = np.eye(len(mat)) - np.ones(mat.shape) / len(mat)
     k = -0.5 * h.dot(mat * mat).dot(h)
@@ -68,82 +93,21 @@ def MDS(mat, n=2):
 
 # tSNE :--------------------------------------------------
 
-def Hbeta(D, beta=1.0):
-    """
-        Compute the perplexity and the P-row for a specific value of the
-        precision of a Gaussian distribution.
-    """
-    # Compute P-row and corresponding perplexity
-    P = np.exp(-D.copy() * beta)
-    sumP = sum(P)+10**-10
-    H = np.log(sumP) + beta * np.sum(D * P) / sumP
-    P = P / sumP
-    return H, P
-
-
-def x2p(D, tol=1e-5, perplexity=30.0):
-    """
-        Performs a binary search to get P-values in such a way that each
-        conditional Gaussian has the same perplexity.
-    """
-
-    # Initialize some variables
-    n=len(D)
-    P = np.zeros((n, n))
-    beta = np.ones((n, 1))
-    logU = np.log(perplexity)
-
-    # Loop over all datapoints
-    for i in range(n):
-
-        # Compute the Gaussian kernel and entropy for the current precision
-        betamin = -np.inf
-        betamax = np.inf
-        Di = D[i, np.concatenate((np.r_[0:i], np.r_[i+1:n]))]
-        (H, thisP) = Hbeta(Di, beta[i])
-
-        # Evaluate whether the perplexity is within tolerance
-        Hdiff = H - logU
-        tries = 0
-        while np.abs(Hdiff) > tol and tries < 50:
-
-            # If not, increase or decrease precision
-            if Hdiff > 0:
-                betamin = beta[i].copy()
-                if betamax == np.inf or betamax == -np.inf:
-                    beta[i] = beta[i] * 2.
-                else:
-                    beta[i] = (beta[i] + betamax) / 2.
-            else:
-                betamax = beta[i].copy()
-                if betamin == np.inf or betamin == -np.inf:
-                    beta[i] = beta[i] / 2.
-                else:
-                    beta[i] = (beta[i] + betamin) / 2.
-
-            # Recompute the values
-            (H, thisP) = Hbeta(Di, beta[i])
-            Hdiff = H - logU
-            tries += 1
-
-        # Set the final row of P
-        P[i, np.concatenate((np.r_[0:i], np.r_[i+1:n]))] = thisP
-
-    return P
-
-
 MACHINE_EPSILON = np.finfo(np.double).eps
 
 def kl_divergence(params, P, degrees_of_freedom, n_samples, n_components):
-    """t-SNE objective function: gradient of the KL divergence
+    """
+    
+    t-SNE objective function: gradient of the KL divergence
     of p_ijs and q_ijs and the absolute error.
+
 
     Parameters
     ----------
-    params : numpy array, shape (n_params,)
+    params : numpy.ndarray, shape (n_params,)
         Unraveled embedding.
 
-    P : numpy array, shape (n_samples * (n_samples-1) / 2,)
+    P : numpy.ndarray, shape (n_samples * (n_samples-1) / 2,)
         Condensed joint probability matrix.
 
     degrees_of_freedom : int
@@ -155,13 +119,15 @@ def kl_divergence(params, P, degrees_of_freedom, n_samples, n_components):
     n_components : int
         Dimension of the embedded space.
     
+    
     Returns
     -------
     kl_divergence : float
         Kullback-Leibler divergence of p_ij and q_ij.
 
-    grad : numpy array, shape (n_params,)
+    grad : numpy.ndarray, shape (n_params,)
         Unraveled gradient of the Kullback-Leibler divergence with respect to the embedding.
+        
     """
     X_embedded = params.reshape(n_samples, n_components)
 
@@ -201,32 +167,46 @@ def tSNE(mat,
          momentum = 0.5,
          rate = 200.0,
          tol=1e-5):
-    '''
-
+    """
+    t-Distributed Stochastic Neighbor Embedding, t-SNE.
+    
+    
     Parameters
     ----------
-    mat : numpy array
+    mat : numpy.ndarray
         Distance matrix of the data points.
+        
     n_dim : int, optional
-        The dimension of the projected points. The default is 2.
+        The dimension of the projected points.
+        The default is 2.
+        
     perp : float, optional
-        Perplexity. The default is 30.0.
+        Perplexity.
+        The default is 30.0.
+        
     n_iter : int, optional
-        Max number of iteration. The default is 1000.
+        Max number of iteration.
+        The default is 1000.
+        
     momentum : float, optional
-        Momentum of gredient decendent. The default is 0.5.
+        Momentum of gredient decendent.
+        The default is 0.5.
+        
     rate : float, optional
-         Gredient decendent rate. The default is 200.
+         Gredient decendent rate.
+         The default is 200.
+         
     tol : float, optional
-         The threshold of gradient norm to stop the iteration of grendient decendent. The default is 1e-5.
+         The threshold of gradient norm to stop the iteration of grendient decendent.
+         The default is 1e-5.
 
     Returns
     -------
-    Y : numpy array
+    Y : numpy.ndarray
         Coordinates of the projected points.
 
-    '''
-    
+    """
+
     # Error messagers
     if len(mat)!=len(mat[0]):
         raise ValueError('tSNE input mat is not a distance matrix!')
@@ -234,6 +214,72 @@ def tSNE(mat,
         raise ValueError('tSNE input mat is not a distance matrix!')
     elif sum(np.diag(mat)!=0)!=0:
         raise ValueError('tSNE input mat is not a distance matrix!')
+
+    
+    def Hbeta(D, beta=1.0):
+        """
+            Compute the perplexity and the P-row for a specific value of the
+            precision of a Gaussian distribution.
+        """
+        # Compute P-row and corresponding perplexity
+        P = np.exp(-D.copy() * beta)
+        sumP = sum(P)+10**-10
+        H = np.log(sumP) + beta * np.sum(D * P) / sumP
+        P = P / sumP
+        return H, P
+    
+    
+    def x2p(D, tol=1e-5, perplexity=30.0):
+        """
+            Performs a binary search to get P-values in such a way that each
+            conditional Gaussian has the same perplexity.
+        """
+    
+        # Initialize some variables
+        n=len(D)
+        P = np.zeros((n, n))
+        beta = np.ones((n, 1))
+        logU = np.log(perplexity)
+    
+        # Loop over all datapoints
+        for i in range(n):
+    
+            # Compute the Gaussian kernel and entropy for the current precision
+            betamin = -np.inf
+            betamax = np.inf
+            Di = D[i, np.concatenate((np.r_[0:i], np.r_[i+1:n]))]
+            (H, thisP) = Hbeta(Di, beta[i])
+    
+            # Evaluate whether the perplexity is within tolerance
+            Hdiff = H - logU
+            tries = 0
+            while np.abs(Hdiff) > tol and tries < 50:
+    
+                # If not, increase or decrease precision
+                if Hdiff > 0:
+                    betamin = beta[i].copy()
+                    if betamax == np.inf or betamax == -np.inf:
+                        beta[i] = beta[i] * 2.
+                    else:
+                        beta[i] = (beta[i] + betamax) / 2.
+                else:
+                    betamax = beta[i].copy()
+                    if betamin == np.inf or betamin == -np.inf:
+                        beta[i] = beta[i] / 2.
+                    else:
+                        beta[i] = (beta[i] + betamin) / 2.
+    
+                # Recompute the values
+                (H, thisP) = Hbeta(Di, beta[i])
+                Hdiff = H - logU
+                tries += 1
+    
+            # Set the final row of P
+            P[i, np.concatenate((np.r_[0:i], np.r_[i+1:n]))] = thisP
+    
+        return P
+    
+    
     
     distances = mat.astype(np.float32, copy=False)
     conditional_P = x2p(distances, tol, perp)
@@ -286,20 +332,25 @@ def tSNE(mat,
 # Takes in a graph adjecent matrix(instead of a distance matrix)
 
 def SpectralEmbedding(graph_matrix, dim):
-    '''
+    """
+    Spectral embedding.
+    
+    
     Parameters
     ----------
-    graph_matrix : numpy array
-        adjecent matrix of the graph of points.
+    graph_matrix : numpy.ndarray
+        Adjecent matrix of the graph of points.
+        
     dim : int
         Dimension of embedding space.
 
+
     Returns
     -------
-    Y : numpy array
+    Y : numpy.ndarray
         Embedding points.
 
-    '''
+    """
 
     L=csgraph.laplacian(graph_matrix, normed=True)
     eig_vals, eig_vecs = np.linalg.eig(L)
@@ -309,7 +360,7 @@ def SpectralEmbedding(graph_matrix, dim):
     return Y
 
 
-
+'''
 # UMAP algorithm :-----------------------------------------
 
 def LocalFuzzySimplicialSet(dist,x, n):
@@ -343,9 +394,9 @@ def OptimizeEmbedding(fs_set,
                       n_epochs,
                       alpha=.1,
                       n_neg_samples=10):
-    '''
+    """
 
-    '''
+    """
 
     initial_alpha=alpha
 
@@ -397,33 +448,33 @@ def UMAP(mat,
          n=5,
          min_dist=1,
          n_epochs=10,
-         alpha=1,
+         alpha=1.0,
          n_neg_samples=0):
-    '''
+    """
 
     Parameters
     ----------
-    mat : numpy array
+    mat : numpy.ndarray
         distance matrix.
     dim : int, optional
         Dimension of embedding space. The default is 2.
     n : int, optional
         neighborhood size. The default is 5.
-    min_dist : TYPE, optional
+    min_dist : float, optional
         DESCRIPTION. The default is 1.
-    n_epochs : TYPE, optional
+    n_epochs : int, optional
         DESCRIPTION. The default is 10.
-    alpha : TYPE, optional
-        DESCRIPTION. The default is 1.
-    n_neg_samples : TYPE, optional
+    alpha : float, optional
+        DESCRIPTION. The default is 1.0.
+    n_neg_samples : int, optional
         DESCRIPTION. The default is 0.
 
     Returns
     -------
-    Y :  numpy array
+    Y :  numpy.ndarray
         embedding points.
 
-    '''
+    """
 
     fs_set=[]
     for i in range(len(mat)):
@@ -443,6 +494,7 @@ def UMAP(mat,
                         n_neg_samples=n_neg_samples)
     return(Y)
 
+'''
 
 
 
@@ -451,22 +503,32 @@ def UMAP(mat,
 def nMDS(dist_mat,
          init,
          momentum=.1, iteration=1000):
-    '''
+    """
+    Non-metric multi-dimensional scaling, nMDS.
+    
+    
     Parameters
     ----------
     dist_mat : array
         Distance matrix of the points.
+        
     init : array
         Initial embedding.
+        
     momentum : float
-        Dimension of the embedding space. The default is 2.
+        Dimension of the embedding space. 
+        The default is 2.
+    
+    iteration : int
+        Number of iteration of gradient descent.
+        The default is 1000.
 
     Returns
     -------
     Y : array
         Embedding points.
 
-    '''
+    """
     # R is Dt
     R=dist_mat
     Y=init
@@ -496,40 +558,81 @@ def nMDS(dist_mat,
 
 
 def VNE(P, t):
+    """
+    
+    Von Neumann Entropy.
+    
+
+    Parameters
+    ----------
+    P : numpy.ndarray
+        The density matrix.
+        
+    t : int
+        Number of time stages to calculate VNE.
+
+
+    Returns
+    -------
+    Ht : float
+        Von Neumann Entropy.
+
+    """
 
     eta=np.linalg.eigvals(P)
     eta=pow(eta,t)
     eta=eta/sum(eta)
     Ht=-sum(eta*np.log(eta))
-    return(Ht)
+    return Ht
 
 
 
 
 def PHATE(mat, dim=2, k=5, a=1, gamma=1, t_max=100, momentum=.1, iteration=1000):
-    '''
+    """
+    Potential of Heat-diffusion for Affinity-based Trajectory Embedding,
+    PHATE.
+    
+
     Parameters
     ----------
-    mat : numpy array
+    mat : numpy.ndarray
         Distance matrix.
+        
     dim : int, optional
-        desired embedding dimension. The default is 2.
+        Desired embedding dimension.
+        The default is 2.
+        
     k : int, optional
-        neighborhood size. The default is 5.
+        Neighborhood size.
+        The default is 5.
+        
     a : float, optional
-        locality scale. The default is 1.
+        Locality scale.
+        The default is 1.
+        
     gamma : float, optional, must in [-1, 1]
-        Informational distance constant between -1 and 1. The default is 1.
+        Informational distance constant between -1 and 1.
+        The default is 1.
+        
     t_max : int, optional
-        maximum time scale for diffusion. The default is 100.
+        Maximum time scale for diffusion.
+        The default is 100.
+    
+    momentum : float, optional
+        Momentum of gradient descent algorithm.
+        The default is .1.
+        
+    iteration : TYPE, optional
+        Number of iteration in gradient descent.
+        The default is 1000.
 
     Returns
     -------
-    Yn : numpy array
+    Y : numpy.ndarray
         The PHATE embedding matrix.
 
-    '''
-
+    """
 
     epsilon=np.sort(mat, axis=0)[k]
 
@@ -580,4 +683,4 @@ def PHATE(mat, dim=2, k=5, a=1, gamma=1, t_max=100, momentum=.1, iteration=1000)
     # apply non-metric MDS to Dt with Y as an initialization
     Y=nMDS(Dt,Y,momentum=.1, iteration=1000)
 
-    return(Y)
+    return Y
