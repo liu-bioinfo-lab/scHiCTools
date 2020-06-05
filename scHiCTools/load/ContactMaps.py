@@ -524,13 +524,13 @@ class scHiCs:
                               kwargs.pop('momentum', 0.5),
                               kwargs.pop('rate', 200),
                               kwargs.pop('tol',1e-5))
-        elif embedding_method == 'umap':
-            embeddings = UMAP(final_distance, dim, 
-                              kwargs.pop('n',5),
-                              kwargs.pop('min_dist',1),
-                              kwargs.pop('n_epochs',10),
-                              kwargs.pop('alpha',1),
-                              kwargs.pop('n_neg_samples',0))
+        # elif embedding_method == 'umap':
+        #     embeddings = UMAP(final_distance, dim, 
+        #                       kwargs.pop('n',5),
+        #                       kwargs.pop('min_dist',1),
+        #                       kwargs.pop('n_epochs',10),
+        #                       kwargs.pop('alpha',1),
+        #                       kwargs.pop('n_neg_samples',0))
         elif embedding_method == 'phate':
             embeddings = PHATE(final_distance, dim,
                                kwargs.pop('k',5), 
