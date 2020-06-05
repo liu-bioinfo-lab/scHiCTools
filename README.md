@@ -39,11 +39,11 @@ A computational toolbox for analyzing single cell Hi-C (high-throughput sequenci
   **Install optional interactive dependencie**
   
   ```console
-    pip install example[interactive]
+    $ pip install example[interactive]
   ```
   or
   ```console
-    pip install -e .[interactive]
+    $ pip install -e .[interactive]
   ```
 
 
