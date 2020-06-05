@@ -16,6 +16,9 @@ A computational toolbox for analyzing single cell Hi-C (high-throughput sequenci
   - simplejson
   - six
   - h5py
+  
+  **`interactive_scatter` feature requirement**
+  - plotly (version >= >=4.8.0)
 
   **Install from GitHub**
 
@@ -27,12 +30,21 @@ A computational toolbox for analyzing single cell Hi-C (high-throughput sequenci
     $ python setup.py install
   ```
 
-  **Install from pip**
+  **Install from PyPI**
 
   ```console
     $ pip install scHiCTools
   ```
 
+  **Install optional interactive dependencie**
+  
+  ```console
+    pip install example[interactive]
+  ```
+  or
+  ```console
+    pip install -e .[interactive]
+  ```
 
 
 ### Usage
