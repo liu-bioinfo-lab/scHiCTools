@@ -206,7 +206,7 @@ def interactive_scatter(schic, data, out_file, dimension="2D", point_size=3,
                                aes_label[2]:data[:,2],
                                'label':label})
             df=df.astype({'label': 'category'})
-            fig = px.scatter_3d(tsne, x=aes_label[0], y=aes_label[1],
+            fig = px.scatter_3d(df, x=aes_label[0], y=aes_label[1],
                                 z=aes_label[2], color="label",
                                 hover_data=['cell'], opacity=alpha)
             
@@ -216,7 +216,7 @@ def interactive_scatter(schic, data, out_file, dimension="2D", point_size=3,
                                aes_label[0]:data[:,0],
                                aes_label[1]:data[:,1],
                                aes_label[2]:data[:,2]})
-            fig = px.scatter_3d(tsne, x=aes_label[0], y=aes_label[1],
+            fig = px.scatter_3d(df, x=aes_label[0], y=aes_label[1],
                                 z=aes_label[2], hover_data=['cell'],
                                 opacity=alpha)
 
