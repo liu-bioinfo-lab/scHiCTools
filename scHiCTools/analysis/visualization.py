@@ -147,10 +147,6 @@ def interactive_scatter(schic, data, out_file, dimension="2D", point_size=3,
     aes_label : list, optional
         Set the label of every axis. The default is None.
 
-    Returns
-    -------
-        Scatter plot of either 2D or 3D.
-
     """
     
     # Error messages.
