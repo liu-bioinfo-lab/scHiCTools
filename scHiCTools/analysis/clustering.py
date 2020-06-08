@@ -5,7 +5,7 @@
 
  Author: Xinjun Li
 
- This script define functions to clustering single cell data.
+ This module define functions to clustering single cell data.
 
 """
 
