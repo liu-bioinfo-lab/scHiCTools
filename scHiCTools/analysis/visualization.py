@@ -5,7 +5,7 @@
 
  Author: Xinjun Li
 
- This script define a function to plot scatter plot of embedding points of single cell data.
+ This module define a function to plot scatter plot of embedding points of single cell data.
 
 """
 
@@ -120,8 +120,7 @@ def scatter(data, dimension="2D", point_size=3, sty='default',
 
 
 def interactive_scatter(schic, data, out_file, dimension="2D", point_size=3,
-                        label=None, title=None, alpha=1,
-                        aes_label=None, **kwargs):
+                        label=None, title=None, alpha=1, aes_label=None):
     """
     This function is to generate an interactive scatter plot of embedded single cell data.
     
@@ -147,9 +146,6 @@ def interactive_scatter(schic, data, out_file, dimension="2D", point_size=3,
         The alpha blending value. The default is 1.
     aes_label : list, optional
         Set the label of every axis. The default is None.
-    **kwargs :
-        Other arguments passed to the `matplotlib.pyplot.legend`,
-        controlling the plot's legend.
 
     Returns
     -------
