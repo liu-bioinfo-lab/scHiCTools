@@ -3,15 +3,15 @@ import sys
 import os
 import matplotlib.pyplot as plt
 
-sys.path.insert(0, os.path.abspath(
-    os.path.join(os.path.dirname(__file__), '..')))
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 
 print(sys.path)
 from scHiCTools import scHiCs,scatter
 
-x = scHiCs(['cell_01','cell_02','cell_03'],
+x = scHiCs(['../test/data/cell_01', '../test/data/cell_02',
+            '../test/data/cell_03'],
            reference_genome='mm9',
-           resolution=500000,
+           resolution=50000,
            max_distance=4000000,
            format='shortest_score',
            adjust_resolution=True,
