@@ -100,7 +100,7 @@ class scHiCs:
         """
 
         self.resolution = resolution
-        self.chromosomes, self.chromosome_lengths = get_chromosome_lengths(reference_genome, chromosomes, resolution if adjust_resolution else 1)
+        self.chromosomes, self.chromosome_lengths = get_chromosome_lengths(reference_genome, chromosomes, resolution)
         self.num_of_cells = len(list_of_files)
         self.sparse = sparse
         self.keep_n_strata = keep_n_strata
@@ -220,6 +220,7 @@ class scHiCs:
             
         **kwargs : 
             Other arguments specify smoothing methods passed to function.
+            See function `scHiCTools.load.processing_utils.matrix_operation`.
             
 
         Returns
