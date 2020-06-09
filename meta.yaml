@@ -1,6 +1,6 @@
 package:
   name: schictools
-  version: 0.0.1
+  version: 0.0.3
   setup_py_install: true
 
 python:
