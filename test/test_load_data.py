@@ -30,10 +30,10 @@ def test_readhic():
 
 
 def test_readtxt():
-    files = ['data/cell_03','data/cell_01','data/cell_02','data/cell_04','data/cell_05']
-    x = scHiCs(files, reference_genome='mm9', resolution=2500000,
+    files = ['data/cell_03','data/cell_01','data/cell_02']
+    x = scHiCs(files, reference_genome='mm9', resolution=100000,
                max_distance=4000000, format='shortest_score',
-               adjust_resolution=True, chromosomes='except Y',
+               adjust_resolution=False, chromosomes='except Y',
                operations=['convolution', 'random_walk', 'network_enhancing'], kernel_shape=3, keep_n_strata=10,
                store_full_map=True)
     assert x.num_of_cells==len(files)
@@ -48,12 +48,12 @@ def test_readmcool():
     assert y.num_of_cells==len(files)
 
 def test_select_cells():
-    files = ['data/cell_03','data/cell_01','data/cell_02','data/cell_04','data/cell_05']
-    x = scHiCs(files, reference_genome='mm9', resolution=2500000,
+    files = ['data/cell_03','data/cell_01','data/cell_02']
+    x = scHiCs(files, reference_genome='mm9', resolution=50000,
                max_distance=4000000, format='shortest_score',
                adjust_resolution=True, chromosomes='except Y',
                operations=['convolution'], kernel_shape=3, keep_n_strata=10,
-               store_full_map=True)
+               store_full_map=False)
     x.plot_contacts()
     x.select_cells(min_n_contacts=240000,max_short_range_contact=0.583)
     assert (x.contacts>240000).all()
