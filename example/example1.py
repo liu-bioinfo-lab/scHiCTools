@@ -1,18 +1,20 @@
 
 import sys
 import os
+import matplotlib.pyplot as plt
+
 sys.path.insert(0, os.path.abspath(
     os.path.join(os.path.dirname(__file__), '..')))
 
 print(sys.path)
-from scHiCTools import scHiCs
+from scHiCTools import scHiCs,scatter
 
 x = scHiCs(['cell_01','cell_02','cell_03'],
            reference_genome='mm9',
            resolution=500000,
            max_distance=4000000,
            format='shortest_score',
-           resolution_adjust=True,
+           adjust_resolution=True,
            chromosomes='except Y',
            operations=['convolution'],
            kernel_shape=3,
@@ -20,6 +22,7 @@ x = scHiCs(['cell_01','cell_02','cell_03'],
            store_full_map=True
            )
 
+x.plot_contacts()
 
 
 emb, _ = x.learn_embedding(similarity_method='innerproduct',
@@ -30,4 +33,10 @@ emb, _ = x.learn_embedding(similarity_method='innerproduct',
 
 print(emb)
 print(_)
+
+
+plt.figure()
+scatter(emb,label=['01','02','03'],point_size=5)
+plt.show()
+
 
