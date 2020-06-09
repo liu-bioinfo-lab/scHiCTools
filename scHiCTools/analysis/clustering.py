@@ -58,7 +58,7 @@ def kmeans(data,
     for i in range(k):
         cen[i]=int(np.random.choice(index,size=1,p=p))
         p=np.array([np.linalg.norm(data-data[cen[j]],axis=1) for j in np.arange(i+1)]).min(axis=0)
-        print('p:',p)
+        # print('p:',p,'\n','data:', data)
         p=p/sum(p)
     centroids=data[cen]
     
