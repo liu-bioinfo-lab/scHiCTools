@@ -150,7 +150,7 @@ def KR_norm(mat, maximum_error_rate=1e-4):
         aa = np.linalg.inv(aa)
         bb = np.diag(x).dot(new_mat).dot(x) - np.ones(x.shape)
         delta = aa.dot(bb)
-        new_x = x - aa.dot(bb)
+        new_x = x - delta
 
         max_error = np.max(np.abs(delta))
         # print(f'Iteration: {k}, Max Error: {max_error}')
