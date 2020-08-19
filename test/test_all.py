@@ -24,7 +24,8 @@ def test():
                 adjust_resolution=False, chromosomes='except Y',
                 operations=['convolution'], kernel_shape=3, keep_n_strata=10,
                 store_full_map=True)
-
+    
+    y.plot_contacts()
     
     emb1 = y.learn_embedding(similarity_method='innerproduct',
                          return_distance=True,
