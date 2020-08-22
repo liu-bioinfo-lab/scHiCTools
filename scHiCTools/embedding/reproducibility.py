@@ -47,7 +47,7 @@ def pairwise_distances(all_strata, similarity_method,
     t0 = time()
 
     if method in ['inner_product', 'innerproduct']:
-        print(' Calculating z-scores...')
+        # print(' Calculating z-scores...')
         zscores = []
         for stratum in all_strata:
             z = zscore(stratum, axis=1)
@@ -56,7 +56,7 @@ def pairwise_distances(all_strata, similarity_method,
             zscores.append(z)
         zscores = np.concatenate(zscores, axis=1)
         t1 = time()
-        print(' Calculating inner product...')
+        # print(' Calculating inner product...')
         inner = zscores.dot(zscores.T) / zscores.shape[1]
         # print(np.max(inner), np.min(inner))
         inner[inner > 1] = 1
@@ -65,7 +65,7 @@ def pairwise_distances(all_strata, similarity_method,
         t2 = time()
 
     elif method == 'hicrep':
-        print(' Calculating means and stds...')
+        # print(' Calculating means and stds...')
         n_cells, n_bins = all_strata[0].shape
         n_strata = len(all_strata)
         weighted_std = np.zeros((n_cells, n_strata))
@@ -76,7 +76,7 @@ def pairwise_distances(all_strata, similarity_method,
         scores = np.concatenate(all_strata, axis=1)
         t1 = time()
 
-        print(' Calculating fastHiCRep score...')
+        # print(' Calculating fastHiCRep score...')
         inner = scores.dot(scores.T) / (weighted_std.dot(weighted_std.T) + 1e-8)  # avoid 0 / 0
         inner[inner > 1] = 1
         inner[inner < -1] = -1
@@ -120,14 +120,14 @@ def pairwise_distances(all_strata, similarity_method,
         #     print('Warning: first {0} strata cannot cover the full region for calculating map similarity.'.format(n_strata),
         #           'Required: {0} strata'.format(window_size),
         #           'Use zeros to fill the missing values.')
-        print(' Calculating summation of sliding windows...')
+        # print(' Calculating summation of sliding windows...')
         all_windows = np.zeros((n_cells, n_windows))
         for i, stratum in enumerate(all_strata):
             for j in range(n_windows):
                 all_windows[:, j] += np.sum(stratum[:, j * window_size: (j + 1) * window_size - i],axis=1)
         t1 = time()
 
-        print(' Pairwisely compare the windows...')
+        # print(' Pairwisely compare the windows...')
         fingerprints = np.zeros((n_cells, n_windows * (n_windows-1)//2))
         k=0
         for i in range(n_windows):
