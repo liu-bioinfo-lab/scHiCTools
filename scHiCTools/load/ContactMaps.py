@@ -1,6 +1,7 @@
 
 import numpy as np
 import pandas as pd
+import sys
 from copy import deepcopy
 from scipy.sparse import coo_matrix
 from .load_hic_file import get_chromosome_lengths, load_HiC
@@ -9,6 +10,40 @@ from .processing_utils import matrix_operation
 # from ..analysis import scatter
 from ..analysis import kmeans, spectral_clustering, HAC
 import matplotlib.pyplot as plt
+try:
+    import multiprocessing as mp
+except:
+    mp=None
+
+def add_cell(ch, idx, file, resolution, chromosome_lengths,
+             store_full_map, keep_n_strata, format, customized_format,
+             header, adjust_resolution, map_filter, sparse, gzip, operations):
+    if ('ch' in ch) and ('chr' not in ch):
+        ch=ch.replace("ch", "chr")
+    mat, strata = load_HiC(
+        file, genome_length=chromosome_lengths,
+        format=format, custom_format=customized_format,
+        header=header, chromosome=ch, resolution=resolution,
+        resolution_adjust=adjust_resolution,
+        map_filter=map_filter, sparse=sparse, gzip=gzip,
+        keep_n_strata=keep_n_strata, operations=operations)
+        
+    contacts=np.sum(mat)/2+ np.trace(mat)/2
+
+    short_range=sum([np.sum(mat[i,i:i+int(2000000/resolution)]) for i in range(len(mat))])
+    mitotic=sum([np.sum(mat[i,i+int(2000000/resolution):i+int(12000000/resolution)]) for i in range(len(mat))])
+    
+    # if not keep_n_strata:
+        # self.strata[ch][idx] = strata
+        # for strata_idx, stratum in enumerate(strata):
+        #     self.strata[ch][strata_idx][idx, :] = stratum
+    if store_full_map:
+        return [contacts, short_range, mitotic, strata, mat]
+    else:
+        return [contacts, short_range, mitotic, strata]
+    # else:
+    #     raise ValueError('`keep_n_strata` should be an positive intger.')
+    
 
 
 class scHiCs:
@@ -16,7 +51,8 @@ class scHiCs:
                  adjust_resolution=True, sparse=False, chromosomes='all',
                  format='customized', keep_n_strata=10, store_full_map=False,
                  operations=None, header=0, customized_format=None,
-                 map_filter=0., gzip=False, **kwargs):
+                 map_filter=0., gzip=False,
+                 parallelize=False, n_processes=None, **kwargs):
         """
 
         Parameters
@@ -86,6 +122,15 @@ class scHiCs:
             If the HiC files are zip files. 
             If `True`, the HiC files are zip files. 
             The default is False.
+        
+        parallelize : bool, optional
+            If `True`, parallelize file reading process. 
+            The default is False. 
+        
+        n_processes : int, optional
+            Number of cores to use in parallelization.
+            When n_processes=Null,  use number of CPUs -1 for parallelization.
+            The default is Null.
             
         **kwargs : 
             Other arguments specify smoothing methods passed to function.
@@ -105,8 +150,8 @@ class scHiCs:
         self.sparse = sparse
         self.keep_n_strata = keep_n_strata
         self.contacts=np.array([0]*len(list_of_files))
-        self.short_range=np.array([0]*len(list_of_files))
-        self.mitotic=np.array([0]*len(list_of_files))
+        self.short_range=np.array([0.0]*len(list_of_files))
+        self.mitotic=np.array([0.0]*len(list_of_files))
         self.files=list_of_files
         self.strata = {
             ch: [np.zeros((self.num_of_cells, self.chromosome_lengths[ch] - i)) for i in range(keep_n_strata)]
@@ -125,37 +170,84 @@ class scHiCs:
             self.full_maps = {
                 ch: np.zeros((self.num_of_cells, self.chromosome_lengths[ch], self.chromosome_lengths[ch]))
                 for ch in self.chromosomes}
-
-        for idx, file in enumerate(list_of_files):
-            print('Processing {0} out of {1} files: {2}'.format(idx+1,len(list_of_files),file))
-
+        
+        print('Loading HiC data...')
+        
+        if parallelize:
+            if mp is None:
+                raise ImportError('Need `multiprocessing` installed to parallelize data loading process.')
+            if n_processes is None:
+                n_processes=mp.cpu_count()-1
+            
+            
+            # print(n_processes)
+            
             for ch in self.chromosomes:
-                if ('ch' in ch) and ('chr' not in ch):
-                    ch=ch.replace("ch", "chr")
-                mat, strata = load_HiC(
-                    file, genome_length=self.chromosome_lengths,
-                    format=format, custom_format=customized_format,
-                    header=header, chromosome=ch, resolution=resolution,
-                    resolution_adjust=adjust_resolution,
-                    map_filter=map_filter, sparse=sparse, gzip=gzip,
-                    keep_n_strata=keep_n_strata, operations=operations,
-                    **kwargs)
+                pool = mp.Pool(n_processes)
                 
-                self.contacts[idx]+=np.sum(mat)/2+ np.trace(mat)/2
-
-                self.short_range[idx]+=sum([np.sum(mat[i,i:i+int(2000000/self.resolution)]) for i in range(len(mat))])
-                self.mitotic[idx]+=sum([np.sum(mat[i,i+int(2000000/self.resolution):i+int(12000000/self.resolution)]) for i in range(len(mat))])
-
-
-
+                results = [pool.apply(add_cell, args=(
+                    ch,idx, file, self.resolution, self.chromosome_lengths, 
+                    store_full_map, keep_n_strata, format, customized_format,
+                    header, adjust_resolution, map_filter, sparse, gzip,
+                    operations)
+                    ) for idx, file in enumerate(self.files)]
+                
                 if store_full_map:
-                    self.full_maps[ch][idx] = mat
-
-                if keep_n_strata:
-                    # self.strata[ch][idx] = strata
+                    for idx in range(len(self.files)):
+                        self.full_maps[ch][idx]=results[idx].pop(4)
+                for idx in range(len(self.files)):
+                    strata=results[idx].pop(3)
                     for strata_idx, stratum in enumerate(strata):
-                        self.strata[ch][strata_idx][idx, :] = stratum
-
+                        self.strata[ch][strata_idx][idx, :]=stratum
+                
+                self.contacts+=[int(i[0]) for i in results]
+                self.short_range+=[i[1] for i in results]
+                self.mitotic+=[i[2] for i in results]
+                
+                pool.close()
+                
+                sys.stdout.write('\r')
+                sys.stdout.write("Process chromosome: {}".format(ch))
+                sys.stdout.flush()
+        
+        else:
+            for idx, file in enumerate(self.files):
+                # print('Processing {0} out of {1} files: {2}'.format(idx+1,len(list_of_files),file))
+    
+                for ch in self.chromosomes:
+                    if ('ch' in ch) and ('chr' not in ch):
+                        ch=ch.replace("ch", "chr")
+                    mat, strata = load_HiC(
+                        file, genome_length=self.chromosome_lengths,
+                        format=format, custom_format=customized_format,
+                        header=header, chromosome=ch, resolution=resolution,
+                        resolution_adjust=adjust_resolution,
+                        map_filter=map_filter, sparse=sparse, gzip=gzip,
+                        keep_n_strata=keep_n_strata, operations=operations,
+                        **kwargs)
+                    
+                    self.contacts[idx]+=np.sum(mat)/2+ np.trace(mat)/2
+    # ??
+                    self.short_range[idx]+=sum([np.sum(mat[i,i:i+int(2000000/self.resolution)]) for i in range(len(mat))])
+                    self.mitotic[idx]+=sum([np.sum(mat[i,i+int(2000000/self.resolution):i+int(12000000/self.resolution)]) for i in range(len(mat))])
+    
+    
+    
+                    if store_full_map:
+                        self.full_maps[ch][idx] = mat
+    
+                    if keep_n_strata:
+                        # self.strata[ch][idx] = strata
+                        for strata_idx, stratum in enumerate(strata):
+                            self.strata[ch][strata_idx][idx, :] = stratum
+                
+                sys.stdout.write('\r')
+                sys.stdout.write("[%-50s] %d/%d \t" % ('='*int((idx+1)/len(self.files)*50), idx+1,len(self.files)))
+                #  File %s loaded  ,file
+            
+                
+                
+                
     def cal_strata(self, n_strata):
         """
         
@@ -307,7 +399,7 @@ class scHiCs:
 
 
 
-    def select_cells(self, min_n_contacts=0,max_short_range_contact=1):
+    def select_cells(self, min_n_contacts=0, max_short_range_contact=1, selected=None):
         """
         
         Select qualify cells based on minimum number of contacts and
@@ -323,6 +415,10 @@ class scHiCs:
         max_short_range_contact : float, optional
             The threshold of maximum proportion of short range contact in every cell.
             The default is 1.
+        
+        selected : list, optional
+            A list of cells to be selected. Elements in the list can be either bool or str.
+            The default is None.
 
         Returns
         -------
@@ -331,10 +427,20 @@ class scHiCs:
 
         """
         
-        files=np.array(self.files)
-        selected=np.logical_and(self.short_range/self.contacts<=max_short_range_contact,self.contacts>=min_n_contacts)
+        # files=np.array(self.files)
+        if selected is None:
+            selected=self.files
+        
+        if np.all([type(i)==str for i in selected]):
+            selected=[True if i in selected else False for i in self.files]
+        elif not np.all([type(i)==bool for i in selected]):
+            raise ValueError("Elements of `selected` should be bool or str!")
+        elif len(selected)!=len(self.files):
+            raise ValueError("When elements of `selected` are bool, length of `selected` should be length of files({})!".format(len(self.files)))
+            
+        selected=np.logical_and(selected,np.logical_and(self.short_range/self.contacts<=max_short_range_contact,self.contacts>=min_n_contacts))
         self.num_of_cells=sum(selected)
-        self.files=[self.files[i] for i in  range(len(files)) if selected[i]]
+        self.files=[self.files[i] for i in  range(len(self.files)) if selected[i]]
         self.contacts=self.contacts[selected]
         self.short_range=self.short_range[selected]
         self.mitotic=self.mitotic[selected]
@@ -347,7 +453,7 @@ class scHiCs:
         if self.distance is not None:
             self.distance=self.distance[:,selected,:][:,:,selected]
             
-        return files[selected]
+        return self.files
 
 
 
@@ -396,7 +502,9 @@ class scHiCs:
 
         X=None
         for ch in self.chromosomes:
-            print('HiCluster processing chromosomes {}'.format(ch))
+            sys.stdout.write('\r')
+            sys.stdout.write('HiCluster processing chromosome {}. '.format(ch))
+            # print('HiCluster processing chromosomes {}'.format(ch))
             A=self.full_maps[ch].copy()
             if len(A.shape)==3:
                 n=A.shape[1]*A.shape[2]
@@ -496,14 +604,17 @@ class scHiCs:
                 print('Sum of time 1:', time1)
                 print('Sum of time 2:', time2)
             else:
-                for ch in self.chromosomes:
-                    print(ch)
+                for i,ch in enumerate(self.chromosomes):
+                    # print(ch)
                     distance_mat = pairwise_distances(new_strata[ch],
                                    similarity_method,
                                    print_time,
                                    kwargs.get('sigma',.5),
                                    kwargs.get('window_size',10))
                     distance_matrices.append(distance_mat)
+                    sys.stdout.write('\r')
+                    sys.stdout.write("[%-30s] %d/%d \t Calculating chromosome %s. " % ('='*int((i+1)/len(self.chromosomes)*30),i+1,len(self.chromosomes),ch))
+                
             self.distance = np.array(distance_matrices)
 
         if aggregation == 'mean':
@@ -606,14 +717,16 @@ class scHiCs:
             n_strata = n_strata if n_strata is not None else self.keep_n_strata
             new_strata = self.cal_strata(n_strata)
 
-            for ch in self.chromosomes:
-                print(ch)
+            for i,ch in enumerate(self.chromosomes):
+                # print(ch)
                 distance_mat = pairwise_distances(new_strata[ch],
                                               similarity_method,
                                               print_time,
                                               kwargs.get('sigma',.5),
                                               kwargs.get('window_size',10))
                 distance_matrices.append(distance_mat)
+                sys.stdout.write('\r')
+                sys.stdout.write("[%-30s] %d/%d \t Calculating chromosome %s. " % ('='*int((i+1)/len(self.chromosomes)*30), i+1, len(self.chromosomes), ch))
             self.distance = np.array(distance_matrices)
 
         if aggregation == 'mean':
