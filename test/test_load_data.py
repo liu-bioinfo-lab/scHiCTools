@@ -20,6 +20,7 @@ sys.path.insert(0, os.path.abspath(
 print(sys.path[:2])
 
 
+
 def test_readhic():
     files = ['data/test.hic']
     x = scHiCs(files, reference_genome='hg19', resolution=2500000,
@@ -34,9 +35,21 @@ def test_readtxt():
     x = scHiCs(files, reference_genome='mm9', resolution=100000,
                max_distance=4000000, format='shortest_score',
                adjust_resolution=False, chromosomes='except Y',
-               operations=['convolution', 'random_walk', 'network_enhancing'], kernel_shape=3, keep_n_strata=10,
-               store_full_map=True)
+                operations=['convolution', 'random_walk', 'network_enhancing'], kernel_shape=3, keep_n_strata=10)
+    
+    y = scHiCs(files, reference_genome='mm9', resolution=100000,
+               max_distance=4000000, format='shortest_score',
+               adjust_resolution=False, chromosomes='except Y',
+                operations=['convolution', 'random_walk', 'network_enhancing'], kernel_shape=3, keep_n_strata=10,
+               store_full_map=True, parallelize=True)
     assert x.num_of_cells==len(files)
+    assert y.num_of_cells==len(files)
+    assert x.resolution == y.resolution
+    assert x.chromosomes == y.chromosomes
+    assert x.chromosome_lengths == y.chromosome_lengths
+    assert np.array_equal(x.contacts, y.contacts)
+    assert np.array_equal(x.short_range,y.short_range)
+    assert np.array_equal(x.mitotic,y.mitotic)
 
 
 def test_readmcool():
