@@ -184,6 +184,7 @@ A computational toolbox for analyzing single cell Hi-C (high-throughput sequenci
   You can plot the number of contacts of your cells.
   ```console
   >>>loaded_data.plot_contacts(hist=True, percent=True)
+  >>>plt.show()
   ```
   If hist is `True`, plot Histogram of the number of contacts. If percent is `True`, plot the scatter plot of cells with  of short-range contacts (< 2 Mb) versus contacts at the mitotic band (2-12 Mb).
 
