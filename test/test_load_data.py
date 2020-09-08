@@ -68,7 +68,8 @@ def test_select_cells():
                operations=['convolution'], kernel_shape=3, keep_n_strata=10,
                store_full_map=False)
     x.plot_contacts()
-    x.select_cells(min_n_contacts=240000,max_short_range_contact=0.583)
+    x.select_cells(n_contacts=[240000,float('inf')], short_range=[0,0.583], mitotic=[0,.9])
     assert (x.contacts>240000).all()
-    assert (x.short_range/x.contacts<0.583).all()
+    assert (x.short_range/x.contacts<=0.583).all()
+    assert (x.mitotic/x.contacts<=.9).all()
 
