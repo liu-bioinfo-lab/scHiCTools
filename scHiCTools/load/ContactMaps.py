@@ -399,7 +399,10 @@ class scHiCs:
 
 
 
-    def select_cells(self, min_n_contacts=0, max_short_range_contact=1, selected=None):
+    def select_cells(self, n_contacts=[0,float("inf")],
+                     short_range=[0,1],
+                     mitotic=[0,1],
+                     selected=None):
         """
         
         Select qualify cells based on minimum number of contacts and
@@ -412,9 +415,13 @@ class scHiCs:
             The threshold of minimum number of contacts in each cell.
             The default is 0.
             
-        max_short_range_contact : float, optional
-            The threshold of maximum proportion of short range contact in every cell.
-            The default is 1.
+        short_range : list, optional
+            The threshold of minimum and maximum proportion of short range contact in every cell.
+            The default is [0,1].
+            
+        mitotic : list, optional
+            The threshold of minimum and maximum proportion of mitotic contact in every cell.
+            The default is [0,1].
         
         selected : list, optional
             A list of cells to be selected. Elements in the list can be either bool or str.
@@ -429,7 +436,7 @@ class scHiCs:
         
         # files=np.array(self.files)
         if selected is None:
-            selected=self.files
+            selected=[True]*self.num_of_cells
         
         if np.all([type(i)==str for i in selected]):
             selected=[True if i in selected else False for i in self.files]
@@ -438,7 +445,14 @@ class scHiCs:
         elif len(selected)!=len(self.files):
             raise ValueError("When elements of `selected` are bool, length of `selected` should be length of files({})!".format(len(self.files)))
             
-        selected=np.logical_and(selected,np.logical_and(self.short_range/self.contacts<=max_short_range_contact,self.contacts>=min_n_contacts))
+        selected=np.all([selected,
+                         short_range[0] <= self.short_range/self.contacts,
+                         self.short_range/self.contacts <= short_range[1],
+                         n_contacts[0] <= self.contacts,
+                         self.contacts <= n_contacts[1],
+                         mitotic[0] <= self.mitotic/self.contacts,
+                         self.mitotic/self.contacts <= mitotic[1]
+                         ],axis=0)
         self.num_of_cells=sum(selected)
         self.files=[self.files[i] for i in  range(len(self.files)) if selected[i]]
         self.contacts=self.contacts[selected]
@@ -446,7 +460,8 @@ class scHiCs:
         self.mitotic=self.mitotic[selected]
         if self.strata is not None:
             for ch in self.chromosomes:
-                self.strata[ch]=[self.strata[ch][i] for i in np.arange(len(selected))[selected]]
+                for s in range(self.keep_n_strata):
+                    self.strata[ch][s]=self.strata[ch][s][selected,:]
         if self.full_maps is not None:
             for ch in self.chromosomes:
                 self.full_maps[ch]=self.full_maps[ch][selected]
