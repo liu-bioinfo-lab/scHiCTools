@@ -183,6 +183,7 @@ A computational toolbox for analyzing single cell Hi-C (high-throughput sequenci
 
   You can plot the number of contacts of your cells.
   ```console
+  >>>import matplotlib.pyplot as plt
   >>>loaded_data.plot_contacts(hist=True, percent=True)
   >>>plt.show()
   ```
@@ -313,6 +314,7 @@ A computational toolbox for analyzing single cell Hi-C (high-throughput sequenci
   **Visualization**
 
   ```console
+  >>>import matplotlib.pyplot as plt
   >>>scatter(data, dimension="2D", point_size=3, sty='default',
   ... label=None, title=None, alpha=None, aes_label=None
   ... )
