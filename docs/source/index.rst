@@ -21,11 +21,15 @@ Indices and tables
 Introduction
 ============
 
-scHiCTools is a computational toolbox for analyzing single cell Hi-C (high-throughput sequencing for 3C) data which includes functions for:
+A computational toolbox for analyzing single cell Hi-C (high-throughput sequencing for 3C) data which includes functions for:
 
-1. Load single-cell HiC datasets
-2. Smoothing the contact maps with linear convolution, random walk or network enhancing
-3. Calculating embeddings for single cell HiC datasets efficiently with reproducibility measures include InnerProduct, HiCRep and Selfish
+1. Loading single-cell HiC datasets
+2. Screening valid single-cell data.
+3. Smoothing the contact maps with linear convolution, random walk or network enhancing
+4. Calculating pairwise similarity using measures include InnerProduct, HiCRep and Selfish
+5. Calculating embeddings for single cell HiC datasets efficiently with MDS, t-SNE and PHATE
+6. Clustering the cells using scHiCluster, k-means and spectral clustering.
+7. Visualizing embedded cells via 2-D or 3-D scatter plot.
 
 
 Setup procedure
