@@ -52,7 +52,7 @@ def get_chromosome_lengths(ref, chromosomes, res=1):
 
     if chromosomes in ['all', 'All']:
         pass
-    elif chromosomes == 'expect X':
+    elif chromosomes == 'except X':
         del lengths['chrX']
     elif chromosomes == 'except Y':
         del lengths['chrY']
