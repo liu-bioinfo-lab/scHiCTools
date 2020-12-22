@@ -2,10 +2,15 @@ import numpy as np
 from time import time
 from scipy.stats import zscore
 import scipy.spatial.distance as dis
-
+from itertools import product
+try:
+    import multiprocessing as mp
+except:
+    mp=None
 
 def pairwise_distances(all_strata, similarity_method,
-                       print_time=False, sigma=.5, window_size=10):
+                       print_time=False, sigma=.5, window_size=10,
+                       parallelize=False, n_processes=1):
     """
     
     Find the pairwise distace using different similarity method, 
@@ -69,10 +74,25 @@ def pairwise_distances(all_strata, similarity_method,
         n_cells, n_bins = all_strata[0].shape
         n_strata = len(all_strata)
         weighted_std = np.zeros((n_cells, n_strata))
-        for i, stratum in enumerate(all_strata):
-            mean, std = np.mean(stratum, axis=1), np.std(stratum, axis=1)
-            weighted_std[:, i] = np.sqrt(n_bins - i) * std
-            all_strata[i] = all_strata[i] - mean[:, None]  # subtract a value for each row
+        if parallelize:
+            pool = mp.Pool(n_processes)
+            def f1(i, stratum):
+                std = np.std(stratum, axis=1)
+                return np.sqrt(n_bins - i) * std
+            def f2(i, stratum):
+                mean = np.mean(stratum, axis=1)
+                return all_strata[i] - mean[:, None]
+            weighted_std = [pool.apply(f1, args=(i,stratum)) for i, stratum in enumerate(all_strata)]
+            weighted_std=np.array(weighted_std).T
+            results2 = [pool.apply(f2, args=(i,stratum)) for i, stratum in enumerate(all_strata)]
+            for i in range(len(all_strata)):
+                all_strata[i]=results2[i]
+            
+        else:
+            for i, stratum in enumerate(all_strata):
+                mean, std = np.mean(stratum, axis=1), np.std(stratum, axis=1)
+                weighted_std[:, i] = np.sqrt(n_bins - i) * std
+                all_strata[i] = all_strata[i] - mean[:, None]  # subtract a value for each row
         scores = np.concatenate(all_strata, axis=1)
         t1 = time()
 
@@ -86,23 +106,52 @@ def pairwise_distances(all_strata, similarity_method,
     elif method == 'old_hicrep':
         n_cells, n_bins = all_strata[0].shape
         similarity = np.ones((n_cells, n_cells))
-        for i in range(n_cells):
-            for j in range(i + 1, n_cells):
-                corrs, weights = [], []
-                for stratum in all_strata:
-                    s1, s2 = stratum[i, :], stratum[j, :]
-                    if np.var(s1)==0 or np.var(s2)==0:
-                        weights.append(0)
-                        corrs.append(0)
-                    else:
-                        # zero_pos = [k for k in range(len(s1)) if s1[k] == 0 and s2[k] == 0]
-                        # s1, s2 = np.delete(s1, zero_pos), np.delete(s2, zero_pos)
-                        weights.append(len(s1) * np.std(s1) * np.std(s2))
-                        corrs.append(np.corrcoef(s1, s2)[0, 1])
-                corrs=np.nan_to_num(corrs)
-                s = np.inner(corrs, weights) / (np.sum(weights))
-                similarity[i, j] = s
-                similarity[j, i] = s
+
+        if parallelize:
+            pool = mp.Pool(n_processes)
+            def f(i, j):
+                if i<j:
+                    corrs, weights = [], []
+                    for stratum in all_strata:
+                        s1, s2 = stratum[i, :], stratum[j, :]
+                        if np.var(s1)==0 or np.var(s2)==0:
+                            weights.append(0)
+                            corrs.append(0)
+                        else:
+                            # zero_pos = [k for k in range(len(s1)) if s1[k] == 0 and s2[k] == 0]
+                            # s1, s2 = np.delete(s1, zero_pos), np.delete(s2, zero_pos)
+                            weights.append(len(s1) * np.std(s1) * np.std(s2))
+                            corrs.append(np.corrcoef(s1, s2)[0, 1])
+                    corrs=np.nan_to_num(corrs)
+                    return np.inner(corrs, weights) / (np.sum(weights))
+                else:
+                    return 0
+
+            results = [pool.apply(f, args=(i,j)) for i,j in product(range(n_cells),range(2))]
+            
+            for i in range(n_cells):
+                for j in range(i + 1, n_cells):
+                    similarity[i, j] = results[i*n_cells+j]
+                    similarity[j, i] = results[i*n_cells+j]
+            
+        else:
+            for i in range(n_cells):
+                for j in range(i + 1, n_cells):
+                    corrs, weights = [], []
+                    for stratum in all_strata:
+                        s1, s2 = stratum[i, :], stratum[j, :]
+                        if np.var(s1)==0 or np.var(s2)==0:
+                            weights.append(0)
+                            corrs.append(0)
+                        else:
+                            zero_pos = [k for k in range(len(s1)) if s1[k] == 0 and s2[k] == 0]
+                            s1, s2 = np.delete(s1, zero_pos), np.delete(s2, zero_pos)
+                            weights.append(len(s1) * np.std(s1) * np.std(s2))
+                            corrs.append(np.corrcoef(s1, s2)[0, 1])
+                    corrs=np.nan_to_num(corrs)
+                    s = np.inner(corrs, weights) / (np.sum(weights))
+                    similarity[i, j] = s
+                    similarity[j, i] = s
         t1 = time()
         distance_mat = np.sqrt(2 - 2 * similarity)
         t2 = time()
