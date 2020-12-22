@@ -542,7 +542,8 @@ class scHiCs:
 
 
     def learn_embedding(self, similarity_method, embedding_method,
-                        dim=2, aggregation='median', n_strata=None, return_distance=False, print_time=False,
+                        dim=2, aggregation='median', n_strata=None, return_distance=False,
+                        print_time=False, parallelize=False, n_processes=1,
                         **kwargs):
         """
         
@@ -612,7 +613,7 @@ class scHiCs:
                 time2=0
                 for ch in self.chromosomes:
                     print(ch)
-                    distance_mat,t1,t2 = pairwise_distances(new_strata[ch], similarity_method, print_time, kwargs.get('sigma',.5), kwargs.get('window_size',10))
+                    distance_mat,t1,t2 = pairwise_distances(new_strata[ch], similarity_method, print_time, kwargs.get('sigma',.5), kwargs.get('window_size',10),parallelize, n_processes)
                     time1=time1+t1
                     time2=time2+t2
                     distance_matrices.append(distance_mat)
