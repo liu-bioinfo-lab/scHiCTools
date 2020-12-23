@@ -19,8 +19,8 @@ def pairwise_distances(all_strata, similarity_method,
 
     Parameters
     ----------
-    all_strata : numpy.ndarray
-        An array contained the strata of a specific chromesome for cells.
+    all_strata : list
+        A list contained the strata of a specific chromesome for cells.
         
     similarity_method : str
         The similarity method used to calculate distance matrix.
