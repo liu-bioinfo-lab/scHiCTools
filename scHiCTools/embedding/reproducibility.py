@@ -118,8 +118,8 @@ def pairwise_distances(all_strata, similarity_method,
                             weights.append(0)
                             corrs.append(0)
                         else:
-                            # zero_pos = [k for k in range(len(s1)) if s1[k] == 0 and s2[k] == 0]
-                            # s1, s2 = np.delete(s1, zero_pos), np.delete(s2, zero_pos)
+                            zero_pos = [k for k in range(len(s1)) if s1[k] == 0 and s2[k] == 0]
+                            s1, s2 = np.delete(s1, zero_pos), np.delete(s2, zero_pos)
                             weights.append(len(s1) * np.std(s1) * np.std(s2))
                             corrs.append(np.corrcoef(s1, s2)[0, 1])
                     corrs=np.nan_to_num(corrs)
