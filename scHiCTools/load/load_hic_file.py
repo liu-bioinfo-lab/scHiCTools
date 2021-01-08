@@ -108,7 +108,7 @@ def file_line_generator(file, format=None, chrom=None, header=0, resolution=1,
 
         if len(format) == 6:  # [chr1 pos1 chr2 pos2 mapq1 mapq2]
             # mapq1 mapq2
-            q1, q2 = float(lst[format[4]-1]), float(lst[format[4]-1])
+            q1, q2 = float(lst[format[4]-1]), float(lst[format[5]-1])
             if q1 < mapping_filter or q2 < mapping_filter:
                 continue
 
