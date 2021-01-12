@@ -124,6 +124,7 @@ def pairwise_distances(all_strata, similarity_method,
                             corrs.append(np.corrcoef(s1, s2)[0, 1])
                     corrs=np.nan_to_num(corrs)
                     return np.inner(corrs, weights) / (np.sum(weights))
+                    # return np.average(corrs, weights=weights)
                 else:
                     return 0
 
