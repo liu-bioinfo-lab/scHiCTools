@@ -17,7 +17,7 @@ except:
 
 def add_cell(ch, idx, file, resolution, chromosome_lengths,
              store_full_map, keep_n_strata, format, customized_format,
-             header, adjust_resolution, map_filter, sparse, gzip, operations):
+             header, adjust_resolution, map_filter, sparse, gzip, operations, sep=' ',):
     if ('ch' in ch) and ('chr' not in ch):
         ch=ch.replace("ch", "chr")
     mat, strata = load_HiC(
@@ -26,7 +26,7 @@ def add_cell(ch, idx, file, resolution, chromosome_lengths,
         header=header, chromosome=ch, resolution=resolution,
         resolution_adjust=adjust_resolution,
         map_filter=map_filter, sparse=sparse, gzip=gzip,
-        keep_n_strata=keep_n_strata, operations=operations)
+        keep_n_strata=keep_n_strata, operations=operations, sep=sep)
         
     contacts=np.sum(mat)/2+ np.trace(mat)/2
 
@@ -51,7 +51,7 @@ class scHiCs:
                  adjust_resolution=True, sparse=False, chromosomes='all',
                  format='customized', keep_n_strata=10, store_full_map=False,
                  operations=None, header=0, customized_format=None,
-                 map_filter=0., gzip=False,
+                 map_filter=0., gzip=False, sep=' ',
                  parallelize=False, n_processes=None, **kwargs):
         """
 
@@ -207,7 +207,7 @@ class scHiCs:
                 pool.close()
                 
                 sys.stdout.write('\r')
-                sys.stdout.write("Process chromosome: {}".format(ch))
+                sys.stdout.write("Process chromosome: {} ".format(ch))
                 sys.stdout.flush()
         
         else:
@@ -223,7 +223,7 @@ class scHiCs:
                         header=header, chromosome=ch, resolution=resolution,
                         resolution_adjust=adjust_resolution,
                         map_filter=map_filter, sparse=sparse, gzip=gzip,
-                        keep_n_strata=keep_n_strata, operations=operations,
+                        keep_n_strata=keep_n_strata, operations=operations, sep=sep,
                         **kwargs)
                     
                     self.contacts[idx]+=np.sum(mat)/2+ np.trace(mat)/2
@@ -244,6 +244,7 @@ class scHiCs:
                 sys.stdout.write('\r')
                 sys.stdout.write("[%-50s] %d/%d \t" % ('='*int((idx+1)/len(self.files)*50), idx+1,len(self.files)))
                 #  File %s loaded  ,file
+                sys.stdout.flush()
             
                 
                 
