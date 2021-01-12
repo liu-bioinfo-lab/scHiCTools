@@ -67,7 +67,7 @@ def get_chromosome_lengths(ref, chromosomes, res=1):
 
 
 def file_line_generator(file, format=None, chrom=None, header=0, resolution=1,
-                        resolution_adjust=True, mapping_filter=0., gzip=False):
+                        resolution_adjust=True, mapping_filter=0., gzip=False, sep=' '):
     """
     For formats other than .hic and .mcool
 
@@ -96,7 +96,7 @@ def file_line_generator(file, format=None, chrom=None, header=0, resolution=1,
         for _ in range(header):
             next(f)
     for line in f:
-        lst = line.strip().split()
+        lst = line.strip().split(sep)
         if len(format) not in [4, 5, 6]:
             raise ValueError('Wrong custom format!')
 
@@ -132,7 +132,7 @@ def file_line_generator(file, format=None, chrom=None, header=0, resolution=1,
 def load_HiC(file, genome_length, format=None, custom_format=None, 
              header=0, chromosome=None, resolution=10000,
              resolution_adjust=True, map_filter=0., sparse=False, gzip=False,
-             keep_n_strata=False, operations=None, **kwargs):
+             keep_n_strata=False, operations=None, sep=' ', **kwargs):
     """
     Load HiC contact map into a matrix
     Args:
@@ -181,43 +181,43 @@ def load_HiC(file, genome_length, format=None, custom_format=None,
         # text files
         elif format == 'shortest':
             gen = file_line_generator(
-                file, format=[1, 2, 3, 4], chrom=chromosome, header=0, gzip=gzip,
-                resolution=resolution, resolution_adjust=resolution_adjust, mapping_filter=0
+                file, format=[1, 2, 3, 4], chrom=chromosome, header=header, gzip=gzip,
+                resolution=resolution, resolution_adjust=resolution_adjust, mapping_filter=0, sep=sep
             )
         elif format == 'shortest_score':
             gen = file_line_generator(
-                file, format=[1, 2, 3, 4, 5], chrom=chromosome, header=0, gzip=gzip,
-                resolution=resolution, resolution_adjust=resolution_adjust, mapping_filter=0
+                file, format=[1, 2, 3, 4, 5], chrom=chromosome, header=header, gzip=gzip,
+                resolution=resolution, resolution_adjust=resolution_adjust, mapping_filter=0,sep=sep
             )
         elif format == 'short':
             gen = file_line_generator(
-                file, format=[2, 3, 6, 7], chrom=chromosome, header=0, gzip=gzip,
-                resolution=resolution, resolution_adjust=resolution_adjust, mapping_filter=0
+                file, format=[2, 3, 6, 7], chrom=chromosome, header=header, gzip=gzip,
+                resolution=resolution, resolution_adjust=resolution_adjust, mapping_filter=0,sep=sep
             )
         elif format == 'short_score':
             gen = file_line_generator(
-                file, format=[2, 3, 6, 7, 9], chrom=chromosome, header=0, gzip=gzip,
-                resolution=resolution, resolution_adjust=resolution_adjust, mapping_filter=0
+                file, format=[2, 3, 6, 7, 9], chrom=chromosome, header=header, gzip=gzip,
+                resolution=resolution, resolution_adjust=resolution_adjust, mapping_filter=0,sep=sep
             )
         elif format == 'medium':
             gen = file_line_generator(
                 file, format=[3, 4, 7, 8, 10, 11], chrom=chromosome, 
-                header=0, gzip=gzip, resolution=resolution,
+                header=header, gzip=gzip, resolution=resolution,
                 resolution_adjust=resolution_adjust,
-                mapping_filter=map_filter
+                mapping_filter=map_filter,sep=sep
             )
         elif format == 'long':
             gen = file_line_generator(
-                file, format=[2, 3, 6, 7, 9, 12], chrom=chromosome, header=0,
+                file, format=[2, 3, 6, 7, 9, 12], chrom=chromosome, header=header,
                 gzip=gzip, resolution=resolution,
                 resolution_adjust=resolution_adjust,
-                mapping_filter=map_filter
+                mapping_filter=map_filter, sep=sep
             )
         elif format == '4dn':
             gen = file_line_generator(
                 file, format=[2, 3, 4, 5], chrom=chromosome, header=2,
                 gzip=gzip, resolution=resolution,
-                resolution_adjust=resolution_adjust, mapping_filter=0
+                resolution_adjust=resolution_adjust, mapping_filter=0, sep=sep
             )
         elif format is None or format == 'customized':
             if custom_format is None:
@@ -229,22 +229,29 @@ def load_HiC(file, genome_length, format=None, custom_format=None,
                     file, format=custom_format, header=header,
                     chrom=chromosome, gzip=gzip, resolution=resolution,
                     resolution_adjust=resolution_adjust,
-                    mapping_filter=map_filter
+                    mapping_filter=map_filter, sep=sep
                 )
         else:
             raise ValueError('Unrecognized format: ' + format)
 
         mat = np.zeros((size, size))
         count = 0
+        lst=[]
         for p1, p2, val in gen:
-            if count==0: #?
-                p1_m=p1#?
-                p2_m=p2#?
-            count += 1
+            if count==0:
+                p1_m=p1
+                p2_m=p2
+            else:
+                if p1<p1_m:
+                    p1_m=p1#?
+                if p2<p2_m:
+                    p2_m=p2#?
+            count+=1
+            lst.append((p1,p2,val))
+            
+        for p1, p2, val in lst:
             p1-=p1_m#?
             p2-=p2_m#?
-            if count % 100000 == 0:
-                print('Line: ', count)
             # print(chromosome, p1, p2, val)
             mat[p1, p2] += val
             if p1 != p2:
