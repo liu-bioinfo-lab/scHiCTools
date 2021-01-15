@@ -55,7 +55,7 @@ def test_readtxt():
 def test_readmcool():
     files=['data/test.mcool']
     y = scHiCs(files, reference_genome='hg19', resolution=2500000,
-                max_distance=4000000, format='mcool', adjust_resolution=True,
+                max_distance=4000000, format='cool', adjust_resolution=True,
                 chromosomes='all', operations=['convolution'],
                 kernel_shape=3, keep_n_strata=10, store_full_map=True)
     assert y.num_of_cells==len(files)
