@@ -8,6 +8,19 @@ try:
 except:
     mp=None
 
+
+
+def f0(st):
+    z = zscore(st, axis=1)
+    z[np.isnan(z)] = 0
+    return z
+def f1(i, stratum, n_bins):
+    std = np.std(stratum, axis=1)
+    return np.sqrt(n_bins - i) * std
+def f2(i, stratum):
+    mean = np.mean(stratum, axis=1)
+    return stratum - mean[:, None]
+
 def pairwise_distances(all_strata, similarity_method,
                        print_time=False, sigma=.5, window_size=10,
                        parallelize=False, n_processes=1):
@@ -54,11 +67,17 @@ def pairwise_distances(all_strata, similarity_method,
     if method in ['inner_product', 'innerproduct']:
         # print(' Calculating z-scores...')
         zscores = []
-        for stratum in all_strata:
-            z = zscore(stratum, axis=1)
-            # print(np.sum(np.isnan(z)))
-            z[np.isnan(z)] = 0
-            zscores.append(z)
+        if parallelize:
+            
+            pool = mp.Pool(n_processes)
+            zscores = [pool.apply(f0, args=(stratum,)) for stratum in all_strata]
+            
+        else:
+            for stratum in all_strata:
+                z = zscore(stratum, axis=1)
+                # print(np.sum(np.isnan(z)))
+                z[np.isnan(z)] = 0
+                zscores.append(z)
         zscores = np.concatenate(zscores, axis=1)
         t1 = time()
         # print(' Calculating inner product...')
@@ -75,14 +94,9 @@ def pairwise_distances(all_strata, similarity_method,
         n_strata = len(all_strata)
         weighted_std = np.zeros((n_cells, n_strata))
         if parallelize:
+
             pool = mp.Pool(n_processes)
-            def f1(i, stratum):
-                std = np.std(stratum, axis=1)
-                return np.sqrt(n_bins - i) * std
-            def f2(i, stratum):
-                mean = np.mean(stratum, axis=1)
-                return all_strata[i] - mean[:, None]
-            weighted_std = [pool.apply(f1, args=(i,stratum)) for i, stratum in enumerate(all_strata)]
+            weighted_std = [pool.apply(f1, args=(i,stratum, n_bins)) for i, stratum in enumerate(all_strata)]
             weighted_std=np.array(weighted_std).T
             results2 = [pool.apply(f2, args=(i,stratum)) for i, stratum in enumerate(all_strata)]
             for i in range(len(all_strata)):
@@ -109,7 +123,7 @@ def pairwise_distances(all_strata, similarity_method,
 
         if parallelize:
             pool = mp.Pool(n_processes)
-            def f(i, j):
+            def f(i, j, all_strata):
                 if i<j:
                     corrs, weights = [], []
                     for stratum in all_strata:
@@ -128,7 +142,7 @@ def pairwise_distances(all_strata, similarity_method,
                 else:
                     return 0
 
-            results = [pool.apply(f, args=(i,j)) for i,j in product(range(n_cells),range(2))]
+            results = [pool.apply(f, args=(i,j, all_strata)) for i,j in product(range(n_cells),range(2))]
             
             for i in range(n_cells):
                 for j in range(i + 1, n_cells):
