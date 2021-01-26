@@ -62,15 +62,17 @@ def pairwise_distances(all_strata, similarity_method,
     """
     
     method = similarity_method.lower()
+    if parallelize:
+        pool = mp.Pool(n_processes)
     t0 = time()
 
     if method in ['inner_product', 'innerproduct']:
         # print(' Calculating z-scores...')
         zscores = []
         if parallelize:
-            
-            pool = mp.Pool(n_processes)
-            zscores = [pool.apply(f0, args=(stratum,)) for stratum in all_strata]
+            # pool = mp.Pool(n_processes)
+            zscores = pool.starmap(f0, [(stratum,) for stratum in all_strata])
+            # zscores = [pool.apply(f0, args=(stratum,)) for stratum in all_strata]
             
         else:
             for stratum in all_strata:
@@ -95,10 +97,13 @@ def pairwise_distances(all_strata, similarity_method,
         weighted_std = np.zeros((n_cells, n_strata))
         if parallelize:
 
-            pool = mp.Pool(n_processes)
-            weighted_std = [pool.apply(f1, args=(i,stratum, n_bins)) for i, stratum in enumerate(all_strata)]
+            # pool = mp.Pool(n_processes)
+            weighted_std = pool.starmap(f1, [(i,stratum,n_bins) for i, stratum in enumerate(all_strata)])
+            # weighted_std = [pool.apply(f1, args=(i,stratum, n_bins)) for i, stratum in enumerate(all_strata)]
             weighted_std=np.array(weighted_std).T
-            results2 = [pool.apply(f2, args=(i,stratum)) for i, stratum in enumerate(all_strata)]
+            
+            results2 = pool.starmap(f2, enumerate(all_strata))
+            # results2 = [pool.apply(f2, args=(i,stratum)) for i, stratum in enumerate(all_strata)]
             for i in range(len(all_strata)):
                 all_strata[i]=results2[i]
             
@@ -122,7 +127,7 @@ def pairwise_distances(all_strata, similarity_method,
         similarity = np.ones((n_cells, n_cells))
 
         if parallelize:
-            pool = mp.Pool(n_processes)
+            # pool = mp.Pool(n_processes)
             def f(i, j, all_strata):
                 if i<j:
                     corrs, weights = [], []
@@ -142,7 +147,8 @@ def pairwise_distances(all_strata, similarity_method,
                 else:
                     return 0
 
-            results = [pool.apply(f, args=(i,j, all_strata)) for i,j in product(range(n_cells),range(2))]
+            results = pool.starmap(f, [(i,j,all_strata) for i,j in product(range(n_cells),range(2))])
+            # results = [pool.apply(f, args=(i,j, all_strata)) for i,j in product(range(n_cells),range(2))]
             
             for i in range(n_cells):
                 for j in range(i + 1, n_cells):
@@ -218,6 +224,7 @@ def pairwise_distances(all_strata, similarity_method,
     if print_time:
         print('Time 1:', t1 - t0)
         print('Time 2:', t2 - t1)
+        # print(parallelize, n_processes)
         return distance_mat, t1 - t0, t2 - t1
     else:
         return distance_mat
