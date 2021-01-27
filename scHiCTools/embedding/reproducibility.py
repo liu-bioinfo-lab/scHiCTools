@@ -21,6 +21,26 @@ def f2(i, stratum):
     mean = np.mean(stratum, axis=1)
     return stratum - mean[:, None]
 
+def f(i, j, all_strata):
+                if i<j:
+                    corrs, weights = [], []
+                    for stratum in all_strata:
+                        s1, s2 = stratum[i, :], stratum[j, :]
+                        if np.var(s1)==0 or np.var(s2)==0:
+                            weights.append(0)
+                            corrs.append(0)
+                        else:
+                            zero_pos = [k for k in range(len(s1)) if s1[k] == 0 and s2[k] == 0]
+                            s1, s2 = np.delete(s1, zero_pos), np.delete(s2, zero_pos)
+                            weights.append(len(s1) * np.std(s1) * np.std(s2))
+                            corrs.append(np.corrcoef(s1, s2)[0, 1])
+                    corrs=np.nan_to_num(corrs)
+                    return np.inner(corrs, weights) / (np.sum(weights))
+                    # return np.average(corrs, weights=weights)
+                else:
+                    return 0
+
+
 def pairwise_distances(all_strata, similarity_method,
                        print_time=False, sigma=.5, window_size=10,
                        parallelize=False, n_processes=1):
@@ -128,25 +148,7 @@ def pairwise_distances(all_strata, similarity_method,
 
         if parallelize:
             # pool = mp.Pool(n_processes)
-            def f(i, j, all_strata):
-                if i<j:
-                    corrs, weights = [], []
-                    for stratum in all_strata:
-                        s1, s2 = stratum[i, :], stratum[j, :]
-                        if np.var(s1)==0 or np.var(s2)==0:
-                            weights.append(0)
-                            corrs.append(0)
-                        else:
-                            zero_pos = [k for k in range(len(s1)) if s1[k] == 0 and s2[k] == 0]
-                            s1, s2 = np.delete(s1, zero_pos), np.delete(s2, zero_pos)
-                            weights.append(len(s1) * np.std(s1) * np.std(s2))
-                            corrs.append(np.corrcoef(s1, s2)[0, 1])
-                    corrs=np.nan_to_num(corrs)
-                    return np.inner(corrs, weights) / (np.sum(weights))
-                    # return np.average(corrs, weights=weights)
-                else:
-                    return 0
-
+            
             results = pool.starmap(f, [(i,j,all_strata) for i,j in product(range(n_cells),range(2))])
             # results = [pool.apply(f, args=(i,j, all_strata)) for i,j in product(range(n_cells),range(2))]
             
