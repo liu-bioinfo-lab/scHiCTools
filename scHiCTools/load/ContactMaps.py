@@ -479,9 +479,9 @@ class scHiCs:
         
         Embedding and clustering single cells using HiCluster.
         Reference: 
-            Zhou J, Ma J, Chen Y, Cheng C, Bao B, Peng J, et al.
-            Robust single-cell Hi-C clustering by convolution- and random-walk–based imputation.
-            PNAS. 2019 Jul 9;116(28):14011–8. 
+        Zhou J, Ma J, Chen Y, Cheng C, Bao B, Peng J, et al.
+        Robust single-cell Hi-C clustering by convolution- and random-walk–based imputation.
+        PNAS. 2019 Jul 9;116(28):14011–8. 
         
         
         Parameters
