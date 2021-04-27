@@ -201,8 +201,8 @@ def HAC(data,
     """
     This function is a impliment of hierarchical afflomerative clustering.
     Reference: 
-        Christopher D. Manning, Prabhakar Raghavan and Hinrich Schütze,
-        "Introduction to Information Retrieval" chapter 17
+    Christopher D. Manning, Prabhakar Raghavan and Hinrich Schütze,
+    "Introduction to Information Retrieval" chapter 17
     
 
     Parameters
