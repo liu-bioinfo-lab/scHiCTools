@@ -213,4 +213,4 @@ def network_enhancing(mat, kNN=20, iteration=1, alpha=0.9):
             new_mat = alpha * walk.T.dot(mat).dot(walk) + (1 - alpha) * mat
         else:
             new_mat = alpha * walk.T.dot(new_mat).dot(walk) + (1 - alpha) * new_mat
-    return mat
+    return new_mat
