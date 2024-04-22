@@ -315,7 +315,7 @@ A computational toolbox for analyzing single cell Hi-C (high-throughput sequenci
 
   ```console
   >>>import matplotlib.pyplot as plt
-  >>>scatter(data, dimension="2D", point_size=3, sty='default',
+  >>>plt.scatter(data, dimension="2D", point_size=3, sty='default',
   ... label=None, title=None, alpha=None, aes_label=None
   ... )
   >>>plt.show()
