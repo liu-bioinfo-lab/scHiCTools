@@ -99,6 +99,10 @@ def file_line_generator(file, format=None, chrom=None, header=0, resolution=1,
         lst = line.strip().split(sep)
         if len(format) not in [4, 5, 6]:
             raise ValueError('Wrong custom format!')
+        
+        if len(lst) < max(format):
+            print("Skipping line: ", line.strip())  # Debug: print problematic lines
+            continue  # Skip lines that do not have enough columns
 
         if format[0] != 0 and format[2] != 0:
             # chr1 chr2
